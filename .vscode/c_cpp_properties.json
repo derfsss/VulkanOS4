@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "name": "AmigaOS4-Docker",
+            "includePath": [
+                "${workspaceFolder}/src/include",
+                "${workspaceFolder}/SDK/include/include_h",
+                "${workspaceFolder}/SDK/include/include_h/**"
+            ],
+            "defines": [
+                "__AMIGAOS4__",
+                "__amigaos4__"
+            ],
+            "compilerPath": "",
+            "cStandard": "c99",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/src",
+                    "${workspaceFolder}/SDK/include/include_h"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}

@@ -1,0 +1,8 @@
+{
+    "file_format_version": "1.0.0",
+    "ICD": {
+        "library_path": "LIBS:Vulkan/software_vk.library",
+        "api_version": "1.3.0",
+        "library_version": 1
+    }
+}

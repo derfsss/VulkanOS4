@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "cppdbg",
+      "request": "launch",
+      "name": "Run AmigaOS4 Program",
+      "program": "${workspaceFolder}/build/VulkanOS4",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "console": "WSL",
+      "preLaunchTask": "docker-build"
+    }
+  ]
+}

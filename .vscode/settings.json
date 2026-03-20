@@ -1,0 +1,33 @@
+{
+  "files.associations": {
+    "libraries.h": "c",
+    "types.h": "c",
+    "exec.h": "c",
+    "interfaces.h": "c",
+    "iterator": "c",
+    "memory": "c",
+    "xutility": "c",
+    "tagitem.h": "c",
+    "dos.h": "c",
+    "*.h": "c"
+  },
+  "C_Cpp.loggingLevel": "Debug",
+  "C_Cpp.errorSquiggles": "disabled",
+  "C_Cpp.intelliSenseEngine": "default",
+  "C_Cpp.default.systemIncludePath": [
+    "${workspaceFolder}/SDK/include/include_h"
+  ],
+  "C_Cpp.default.includePath": [
+    "${workspaceFolder}/src/include",
+    "${workspaceFolder}/SDK/include/include_h",
+    "${workspaceFolder}/SDK/include/include_h/**"
+  ],
+  "C_Cpp.default.compilerPath": "",
+  "terminal.integrated.defaultProfile.windows": "WSL",
+  "terminal.integrated.profiles.windows": {
+    "WSL": {
+      "path": "wsl.exe",
+      "args": []
+    }
+  }
+}

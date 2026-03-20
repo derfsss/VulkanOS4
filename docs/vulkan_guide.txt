@@ -1,0 +1,312 @@
+VulkanOS4 -- Getting Started Guide
+===================================
+
+Vulkan 1.3 for AmigaOS 4
+
+
+1. INTRODUCTION
+===============
+
+VulkanOS4 provides a Vulkan 1.3 implementation for AmigaOS 4, consisting
+of a loader library (vulkan.library), a software-only ICD
+(software_vk.library), and a complete SDK for developing Vulkan programs.
+
+Two ICDs are provided:
+
+  software_vk.library -- CPU-only rendering (no GPU needed). Works on all
+  AmigaOS 4 systems. Useful for development and validation.
+
+  ogles2_vk.library -- GPU-accelerated rendering via Warp3D Nova /
+  ogles2.library. Requires a supported GPU (Radeon RX/HD) with the
+  RadeonRX or RadeonHD driver. Uses the OGLES2 backend with an integrated
+  SPIR-V to GLSL ES 3.1 transpiler. Typically 10-300x faster than software.
+
+The loader (vulkan.library) automatically selects the best available ICD.
+Use VulkanPrefs to manage ICD priority and enable/disable ICDs.
+
+
+2. INSTALLATION
+===============
+
+Runtime (required to run Vulkan programs):
+
+    Copy LIBS:vulkan.library          ; Vulkan loader
+    Copy LIBS:Vulkan/software_vk.library  ; Software ICD
+    Copy LIBS:Vulkan/ogles2_vk.library   ; GPU ICD (optional, needs Warp3D Nova)
+    Copy DEVS:Vulkan/icd.d/software_vk.json  ; Software ICD manifest
+    Copy DEVS:Vulkan/icd.d/ogles2_vk.json   ; GPU ICD manifest (optional)
+    Copy C:VulkanPrefs                ; ICD preference tool (optional)
+
+SDK (required to compile Vulkan programs):
+
+    Copy SDK:include/include_h/vulkan/    ; Vulkan core headers
+    Copy SDK:include/include_h/interfaces/vulkan.h
+    Copy SDK:include/include_h/inline4/vulkan.h
+    Copy SDK:include/include_h/proto/vulkan.h
+    Copy SDK:include/include_h/clib/vulkan_protos.h
+    Copy SDK:newlib/lib/libvulkan_loader.a    ; Link library
+
+The Autoinstall script installs the runtime files automatically.
+SDK files must be copied manually.
+
+
+3. COMPILING A VULKAN PROGRAM
+=============================
+
+Minimal compile command:
+
+    gcc -mcrt=newlib -D__USE_INLINE__ -o myapp myapp.c -lvulkan_loader -lauto
+
+Required flags:
+    -D__USE_INLINE__     Enables inline macros (vkCreateInstance() etc.)
+    -lvulkan_loader      Links the auto-open stub for vulkan.library
+    -lauto               Auto-opens exec.library, intuition.library, etc.
+
+Required includes in your source code:
+
+    #include <proto/exec.h>        /* always needed */
+    #include <proto/intuition.h>   /* if using windows/WSI */
+    #include <proto/vulkan.h>      /* Vulkan API */
+
+The proto/vulkan.h header automatically includes the Vulkan type
+definitions, interface struct, and inline macros.
+
+IMPORTANT: With -D__USE_INLINE__, use plain function names:
+    CORRECT:  OpenLibrary("name", 1)
+    WRONG:    IExec->OpenLibrary("name", 1)
+
+The inline macros handle the interface dispatch automatically.
+
+
+4. MINIMAL VULKAN PROGRAM
+==========================
+
+    #include <proto/exec.h>
+    #include <proto/vulkan.h>
+    #include <stdio.h>
+    #include <string.h>
+
+    int main(void)
+    {
+        if (!IVulkan) {
+            printf("No vulkan.library\n");
+            return 1;
+        }
+
+        VkApplicationInfo ai;
+        memset(&ai, 0, sizeof(ai));
+        ai.sType            = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        ai.pApplicationName = "MyApp";
+        ai.apiVersion       = VK_API_VERSION_1_3;
+
+        VkInstanceCreateInfo ci;
+        memset(&ci, 0, sizeof(ci));
+        ci.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        ci.pApplicationInfo = &ai;
+
+        VkInstance instance;
+        if (vkCreateInstance(&ci, NULL, &instance) != VK_SUCCESS) {
+            printf("Failed to create instance\n");
+            return 1;
+        }
+
+        uint32_t count = 0;
+        vkEnumeratePhysicalDevices(instance, &count, NULL);
+        printf("Found %u Vulkan device(s)\n", count);
+
+        vkDestroyInstance(instance, NULL);
+        return 0;
+    }
+
+
+5. CREATING A WINDOW AND SURFACE
+=================================
+
+VulkanOS4 uses the VK_AMIGA_surface extension for window integration.
+See docs/wsi_amiga.txt for full documentation.
+
+Short version:
+
+    #include <proto/intuition.h>
+
+    struct Screen *screen = LockPubScreen(NULL);
+    struct Window *window = OpenWindowTags(NULL,
+        WA_Title, (Tag)"My Vulkan App",
+        WA_Width, 800, WA_Height, 600,
+        WA_CloseGadget, TRUE,
+        WA_IDCMP, IDCMP_CLOSEWINDOW,
+        WA_PubScreen, (Tag)screen,
+        TAG_DONE);
+
+    VkAmigaSurfaceCreateInfoAMIGA sci;
+    memset(&sci, 0, sizeof(sci));
+    sci.sType   = VK_STRUCTURE_TYPE_AMIGA_SURFACE_CREATE_INFO;
+    sci.pScreen = screen;
+    sci.pWindow = window;
+
+    VkSurfaceKHR surface;
+    vkCreateAmigaSurfaceAMIGA(instance, &sci, NULL, &surface);
+
+
+6. VULKAN 1.3 DYNAMIC RENDERING
+=================================
+
+VulkanOS4 uses Vulkan 1.3 dynamic rendering (no VkRenderPass objects).
+Begin a render pass with vkCmdBeginRendering:
+
+    VkRenderingAttachmentInfo colorAtt;
+    memset(&colorAtt, 0, sizeof(colorAtt));
+    colorAtt.sType     = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+    colorAtt.imageView = myImageView;
+    colorAtt.loadOp    = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAtt.storeOp   = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo ri;
+    memset(&ri, 0, sizeof(ri));
+    ri.sType                    = VK_STRUCTURE_TYPE_RENDERING_INFO;
+    ri.renderArea.extent.width  = width;
+    ri.renderArea.extent.height = height;
+    ri.layerCount               = 1;
+    ri.colorAttachmentCount     = 1;
+    ri.pColorAttachments        = &colorAtt;
+
+    vkCmdBeginRendering(cmdBuf, &ri);
+    /* ... draw commands ... */
+    vkCmdEndRendering(cmdBuf);
+
+
+7. SHADER COMPILATION
+======================
+
+Shaders are written in GLSL and compiled to SPIR-V bytecode using
+glslangValidator (available on all platforms):
+
+    glslangValidator -V shader.vert -o vert.spv
+    glslangValidator -V shader.frag -o frag.spv
+
+Embed the SPIR-V in your program using xxd:
+
+    xxd -i vert.spv > vert_spv.h
+
+Then include the header and create a shader module:
+
+    #include "vert_spv.h"
+
+    VkShaderModuleCreateInfo ci;
+    memset(&ci, 0, sizeof(ci));
+    ci.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    ci.codeSize = vert_spv_len;
+    ci.pCode    = (const uint32_t *)vert_spv;
+
+    VkShaderModule module;
+    vkCreateShaderModule(device, &ci, NULL, &module);
+
+
+8. EXAMPLES
+============
+
+The SDK includes 22 working examples in the Examples/ directory:
+
+    01_enumerate      - Device information (CLI, no window)
+    02_clear          - Animated colour cycling (render loop, no shaders)
+    03_gradient       - Fullscreen gradient quad (TRIANGLE_STRIP topology)
+    04_checkerboard   - Checkerboard pattern (floor, fmod, branching)
+    05_plasma         - Plasma effect (sin, cos, sqrt -- heavy math)
+    06_rings          - Concentric rings (length, fract, smoothstep, mix)
+    07_waves          - Rainbow waves (sin, cos)
+    08_triangle       - RGB triangle (full pipeline demo)
+    09_rotating       - Spinning triangle (push constants, animated render loop)
+    10_depth          - Overlapping triangles with depth testing (vertex buffers)
+    11_textured       - Textured quad with sampled checkerboard (descriptor sets)
+    12_wireframe_cube - Rotating wireframe cube (mat4 MVP, LINE_LIST, indexed)
+    13_solid_cube     - Solid lit cube (face colours via comparisons + select)
+    14_instanced_cubes - 3x3 grid of cubes (instanced rendering, gl_InstanceIndex)
+    15_render_pass    - Legacy render pass API (VkRenderPass, VkFramebuffer)
+    16_transfer_ops   - Buffer/image copy, fill, update commands
+    17_events_sync    - Events and synchronisation primitives
+    18_query_demo     - Query pools and pipeline statistics
+    19_indirect_draw  - Indirect draw buffer setup pattern
+    20_torus          - Textured rotating torus with starfield background
+    21_image_texture  - Image file loading via stb_image (optional, with fallback)
+    22_gltf_viewer    - glTF 2.0 model loading via cgltf (optional, with fallback)
+
+Each example includes the pre-built binary, C source, and GLSL shaders.
+
+Shared utility headers are in examples/common/:
+    vk_helpers.h   - Vulkan boilerplate helpers (init/cleanup)
+    vk_math.h      - Column-major mat4 math (identity, multiply, rotate,
+                     perspective, translate). API inspired by cglm.
+
+Third-party library integration (Batch 9):
+    Examples 21 and 22 optionally use stb_image.h and cgltf.h respectively.
+    Without these headers, the examples use built-in procedural fallbacks.
+    See external/stb/README.md and external/cgltf/README.md for download
+    instructions. See THIRD_PARTY.md for full attribution.
+
+
+9. DEBUGGING
+=============
+
+The ICD outputs debug messages to the serial port. Connect a serial
+terminal (or use the serial debug option in your emulator) to see:
+
+    [software_vk] Instance created (API 1.3)
+    [software_vk] Device created
+    [software_vk] Swapchain created: 790x564, 3 images
+    [software_vk] Executing command buffer (6 commands)
+
+Use DebugPrintF() in your own code for serial debug output.
+(With -D__USE_INLINE__, this expands to IExec->DebugPrintF automatically.)
+
+
+10. KNOWN LIMITATIONS
+=====================
+
+Current capabilities:
+
+    - 218 Vulkan functions (100% of the Vulkan 1.3 core + WSI spec)
+    - 210+ SPIR-V opcodes in both ICDs (comparisons, control flow,
+      integer arithmetic, type conversions, function calls, textures,
+      derivatives, advanced image ops, bit manipulation, fragment discard)
+    - 22 working examples (01_enumerate through 22_gltf_viewer)
+    - Push constants, uniform buffers, descriptor sets, vertex/index buffers
+    - Combined image sampler textures (R8G8B8A8_UNORM)
+    - Depth testing, backface culling, dynamic state
+    - Transfer commands (buffer/image copy, fill, update)
+    - Legacy render pass support
+    - Vulkan 1.1/1.2/1.3 API wrappers
+
+    Software ICD:    CPU rendering, works on all AmigaOS 4 systems
+    GPU ICD:         GPU rendering via OGLES2, 10-300x faster
+
+    Performance (X5000/20, P5020 2GHz, RX 560):
+      Software (CPU):  clear=98 FPS,  rotating=16 FPS,   waves=0.56 FPS
+      GPU (RX 560):    clear=200 FPS, rotating=183 FPS,  waves=181 FPS
+      Software (CPU):  wireframe_cube=75 FPS
+      GPU (RX 560):    wireframe_cube=72 FPS
+
+Known limitations:
+
+    - No compute shaders (OGLES2 does not support compute)
+    - No structured control flow in GPU transpiler (if/else, loops)
+      -- uses OpSelect ternary for branchless conditionals
+    - Single viewport, single scissor
+    - No multi-sampling (MSAA)
+
+    Remaining phases (large standalone projects):
+    Phase X2    -- Ecosystem ports (VMA, SPIRV-Cross, spirv-tools, CTS)
+    Phase W3    -- SDL2 + Cairo Vulkan backends
+    Phase W1-W2 -- Compatibility wrappers (W3D Nova/OGLES2 -> Vulkan)
+    Phase B1-B3 -- Direct hardware ICD (PCIe MMIO, GCN, SPIR-V->GCN)
+    Phase C1    -- Vulkan display compositor (GPU-rendered Workbench)
+
+
+11. RESOURCES
+==============
+
+    docs/vulkan-api-design.md      Full API design document
+    docs/implementation-guide.md   Implementation plan and phase details
+    docs/wsi_amiga.txt             VK_AMIGA_surface extension reference
+    tools/vulkaninfo               Device information utility
+    tools/VulkanPrefs              ICD priority and enable/disable manager
+    tools/AmigaMark                GPU benchmark (fill rate measurement)

@@ -1,0 +1,56 @@
+# Build artifacts
+build/
+*.o
+*.elf
+*.map
+*.library
+
+# Generated SDK files (regenerated from vk.xml -- do not track)
+sdk/include/include_h/vulkan/vulkan_core.h
+sdk/include/include_h/interfaces/vulkan.h
+sdk/include/include_h/inline4/vulkan.h
+sdk/include/include_h/clib/vulkan_protos.h
+sdk/newlib/lib/
+sdk/local/newlib/lib/
+
+# SPIR-V compiled shaders (regenerated from GLSL sources)
+*.spv
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# WSL specific
+.wslconfig
+
+# Khronos Vulkan-Headers checkout (downloaded by generator)
+Vulkan-Headers/
+
+# IDE files (optional - uncomment if you don't want to track these)
+# .vscode/
+# *.code-workspace
+
+# AmigaOS SDK symlink (points to shared SDK, not project-specific)
+SDK
+external/
+
+# Distribution output
+dist/
+
+# Internal development docs (plans, phases, batches)
+docs/phase*.md
+docs/phaseA*.md
+docs/phaseB*.md
+docs/phaseG*.md
+docs/batch*-progress.md
+docs/plan-*.md
+docs/implementation-guide.md
+
+# Claude AI assistant files
+CLAUDE.md
+.claude/

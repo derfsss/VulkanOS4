@@ -1,0 +1,232 @@
+VK_AMIGA_surface -- AmigaOS WSI Extension Reference
+=====================================================
+
+Extension name:   VK_AMIGA_surface
+Spec version:     1
+Extension number: 400 (private, unregistered with Khronos)
+Required:         VK_KHR_surface
+Type:             Instance extension (provided by vulkan.library loader)
+
+
+1. OVERVIEW
+===========
+
+VK_AMIGA_surface provides the ability to create Vulkan rendering surfaces
+from AmigaOS Intuition Screens and Windows. This is the platform-specific
+Window System Integration (WSI) extension for AmigaOS 4.
+
+On other platforms, the equivalent extensions are:
+    VK_KHR_xlib_surface     (X11/Linux)
+    VK_KHR_win32_surface    (Windows)
+    VK_KHR_wayland_surface  (Wayland/Linux)
+    VK_MVK_macos_surface    (macOS via MoltenVK)
+
+
+2. HEADER
+=========
+
+    #include <vulkan/vulkan_amiga.h>
+
+This header is automatically included by <vulkan/vulkan.h>.
+
+
+3. CONSTANTS
+============
+
+    #define VK_AMIGA_SURFACE_SPEC_VERSION     1
+    #define VK_AMIGA_SURFACE_EXTENSION_NAME   "VK_AMIGA_surface"
+
+    VK_STRUCTURE_TYPE_AMIGA_SURFACE_CREATE_INFO
+
+    (sType value for VkAmigaSurfaceCreateInfoAMIGA)
+
+
+4. TYPES
+========
+
+    typedef VkFlags VkAmigaSurfaceCreateFlagsAMIGA;
+
+    Currently no flags are defined. Pass 0.
+
+
+5. STRUCTURES
+=============
+
+    typedef struct VkAmigaSurfaceCreateInfoAMIGA {
+        VkStructureType                sType;
+        const void*                    pNext;
+        VkAmigaSurfaceCreateFlagsAMIGA flags;
+        struct Screen*                 pScreen;
+        struct Window*                 pWindow;
+    } VkAmigaSurfaceCreateInfoAMIGA;
+
+    Members:
+
+    sType    - Must be VK_STRUCTURE_TYPE_AMIGA_SURFACE_CREATE_INFO.
+    pNext    - NULL or pointer to extension structure.
+    flags    - Reserved, must be 0.
+    pScreen  - Pointer to the Intuition Screen. Required (must not be NULL).
+    pWindow  - Pointer to the Intuition Window, or NULL for fullscreen.
+
+    If pWindow is provided, the surface renders into the window's inner
+    area (excluding borders). The surface dimensions are:
+        width  = pWindow->Width  - pWindow->BorderLeft - pWindow->BorderRight
+        height = pWindow->Height - pWindow->BorderTop  - pWindow->BorderBottom
+
+    If pWindow is NULL and pScreen is provided, the surface covers the
+    entire screen (fullscreen mode).
+
+
+6. FUNCTIONS
+============
+
+6.1 vkCreateAmigaSurfaceAMIGA
+------------------------------
+
+    VkResult vkCreateAmigaSurfaceAMIGA(
+        VkInstance                             instance,
+        const VkAmigaSurfaceCreateInfoAMIGA*   pCreateInfo,
+        const VkAllocationCallbacks*           pAllocator,
+        VkSurfaceKHR*                          pSurface);
+
+    Creates a VkSurfaceKHR from an AmigaOS Intuition Window or Screen.
+
+    Parameters:
+        instance    - Valid VkInstance.
+        pCreateInfo - Pointer to VkAmigaSurfaceCreateInfoAMIGA.
+        pAllocator  - NULL (custom allocators not supported).
+        pSurface    - Output: the created surface handle.
+
+    Return values:
+        VK_SUCCESS                   - Surface created successfully.
+        VK_ERROR_OUT_OF_HOST_MEMORY  - Memory allocation failed.
+        VK_ERROR_INITIALIZATION_FAILED - Invalid parameters.
+
+    The surface is owned by the loader (vulkan.library), not the ICD.
+    Destroy it with vkDestroySurfaceKHR.
+
+
+6.2 vkGetPhysicalDeviceAmigaPresentationSupportAMIGA
+------------------------------------------------------
+
+    VkBool32 vkGetPhysicalDeviceAmigaPresentationSupportAMIGA(
+        VkPhysicalDevice    physicalDevice,
+        uint32_t            queueFamilyIndex,
+        struct Screen*      screen);
+
+    Queries whether a queue family supports presentation to an AmigaOS
+    screen. On AmigaOS 4, all queue families support presentation, so
+    this always returns VK_TRUE.
+
+
+7. USAGE EXAMPLE
+================
+
+    #include <proto/intuition.h>
+    #include <proto/vulkan.h>
+
+    /* Open window */
+    struct Screen *screen = LockPubScreen(NULL);
+    struct Window *window = OpenWindowTags(NULL,
+        WA_Title,       (Tag)"Vulkan App",
+        WA_Width,       800,
+        WA_Height,      600,
+        WA_DragBar,     TRUE,
+        WA_CloseGadget, TRUE,
+        WA_IDCMP,       IDCMP_CLOSEWINDOW,
+        WA_PubScreen,   (Tag)screen,
+        TAG_DONE);
+
+    /* Create Vulkan instance with surface extensions */
+    const char *exts[] = {
+        VK_KHR_SURFACE_EXTENSION_NAME,
+        VK_AMIGA_SURFACE_EXTENSION_NAME
+    };
+    /* ... create instance with these extensions ... */
+
+    /* Create surface */
+    VkAmigaSurfaceCreateInfoAMIGA surfaceCI;
+    memset(&surfaceCI, 0, sizeof(surfaceCI));
+    surfaceCI.sType   = VK_STRUCTURE_TYPE_AMIGA_SURFACE_CREATE_INFO;
+    surfaceCI.pScreen = screen;
+    surfaceCI.pWindow = window;
+
+    VkSurfaceKHR surface;
+    vkCreateAmigaSurfaceAMIGA(instance, &surfaceCI, NULL, &surface);
+
+    /* Query surface capabilities */
+    VkSurfaceCapabilitiesKHR caps;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physDev, surface, &caps);
+    /* caps.currentExtent contains the inner window dimensions */
+
+    /* Create swapchain using surface */
+    VkSwapchainCreateInfoKHR swapCI;
+    /* ... fill in swapCI.surface = surface, etc. ... */
+
+    /* ... render loop ... */
+
+    /* Cleanup */
+    vkDestroySwapchainKHR(device, swapchain, NULL);
+    vkDestroySurfaceKHR(instance, surface, NULL);
+    CloseWindow(window);
+    UnlockPubScreen(NULL, screen);
+
+
+8. SURFACE CAPABILITIES
+========================
+
+The software ICD reports these surface capabilities:
+
+    minImageCount:         2
+    maxImageCount:         3
+    currentExtent:         (inner window dimensions)
+    minImageExtent:        1 x 1
+    maxImageExtent:        4096 x 4096
+    maxImageArrayLayers:   1
+    supportedTransforms:   VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR
+    supportedCompositeAlpha: VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
+    supportedUsageFlags:   COLOR_ATTACHMENT | TRANSFER_DST
+
+Supported surface format:
+    VK_FORMAT_B8G8R8A8_UNORM / VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+
+Supported present modes:
+    VK_PRESENT_MODE_FIFO_KHR      (always available per spec)
+    VK_PRESENT_MODE_IMMEDIATE_KHR
+
+
+9. PRESENTATION
+================
+
+The software ICD presents frames by blitting the rendered ARGB32
+framebuffer to the Intuition window using graphics.library:
+
+    IGraphics->WritePixelArray(pixels, 0, 0, bytesPerRow,
+        PIXF_A8R8G8B8, win->RPort,
+        win->BorderLeft, win->BorderTop,
+        width, height);
+
+This is a CPU-to-CPU copy. GPU-accelerated ICDs will use direct
+scanout or DMA transfers for zero-copy presentation.
+
+
+10. LOADER vs ICD RESPONSIBILITIES
+====================================
+
+The WSI is split between the loader and the ICD:
+
+Loader owns (instance-level):
+    vkCreateAmigaSurfaceAMIGA       - Creates surface from Window/Screen
+    vkDestroySurfaceKHR             - Frees loader's surface wrapper
+    vkGetPhysicalDeviceAmigaPresentationSupportAMIGA
+
+ICD owns (device-level, forwarded from loader):
+    vkGetPhysicalDeviceSurfaceSupportKHR
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR
+    vkGetPhysicalDeviceSurfaceFormatsKHR
+    vkGetPhysicalDeviceSurfacePresentModesKHR
+    vkCreateSwapchainKHR
+    vkDestroySwapchainKHR
+    vkGetSwapchainImagesKHR
+    vkAcquireNextImageKHR
+    vkQueuePresentKHR

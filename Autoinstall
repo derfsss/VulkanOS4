@@ -1,0 +1,79 @@
+; VulkanOS4 Autoinstall
+; Installs Vulkan 1.3 runtime libraries, ICDs, and tools for AmigaOS 4
+;
+; Run from the VulkanOS4 distribution directory:
+;   Execute Autoinstall
+;
+; Files installed automatically:
+;   LIBS:vulkan.library                    - Vulkan loader
+;   LIBS:Vulkan/software_vk.library        - Software ICD (CPU renderer)
+;   LIBS:Vulkan/ogles2_vk.library          - GPU ICD (OGLES2 backend, requires Radeon)
+;   DEVS:Vulkan/icd.d/software_vk.json     - Software ICD manifest
+;   DEVS:Vulkan/icd.d/ogles2_vk.json       - GPU ICD manifest
+;   C:VulkanPrefs                           - ICD preferences tool
+;   C:vulkaninfo                            - Device information tool
+;
+; SDK files must be copied manually (see instructions at end)
+
+echo ""
+echo "VulkanOS4 -- Vulkan 1.3 for AmigaOS 4"
+echo "======================================"
+echo ""
+
+; Create target directories (ignore errors if they already exist)
+failat 21
+makedir LIBS:Vulkan ALL
+makedir DEVS:Vulkan ALL
+makedir DEVS:Vulkan/icd.d ALL
+failat 10
+
+; Install loader
+echo "Installing vulkan.library..."
+copy Libs/vulkan.library LIBS:vulkan.library CLONE QUIET
+
+; Install software ICD (CPU renderer -- always available)
+echo "Installing software_vk.library (software renderer)..."
+copy Libs/Vulkan/software_vk.library LIBS:Vulkan/software_vk.library CLONE QUIET
+copy Devs/Vulkan/icd.d/software_vk.json DEVS:Vulkan/icd.d/software_vk.json CLONE QUIET
+
+; Install GPU ICD (OGLES2 backend -- requires Radeon GPU + radeonrx/radeonhd driver)
+echo "Installing ogles2_vk.library (GPU renderer)..."
+copy Libs/Vulkan/ogles2_vk.library LIBS:Vulkan/ogles2_vk.library CLONE QUIET
+copy Devs/Vulkan/icd.d/ogles2_vk.json DEVS:Vulkan/icd.d/ogles2_vk.json CLONE QUIET
+
+; Install tools
+echo "Installing tools..."
+copy Tools/VulkanPrefs C:VulkanPrefs CLONE QUIET
+copy Tools/vulkaninfo C:vulkaninfo CLONE QUIET
+
+echo ""
+echo "Runtime installation complete."
+echo ""
+echo "GPU ICD (ogles2_vk) will be used automatically when a Radeon"
+echo "GPU with Warp3D Nova support is present. The software renderer"
+echo "is used as a fallback when no GPU is available."
+echo ""
+echo "Tools installed to C: (available from any shell):"
+echo "  vulkaninfo   - Show Vulkan device information"
+echo "  VulkanPrefs  - Manage ICD priority and settings"
+echo ""
+echo "To run examples (22 included):"
+echo "  Examples/08_triangle/08_triangle     - RGB triangle"
+echo "  Examples/09_rotating/09_rotating     - Spinning triangle"
+echo "  Examples/20_torus/20_torus           - Textured torus + starfield"
+echo "  Examples/21_image_texture/21_image_texture - Image file texture"
+echo "  Examples/22_gltf_viewer/22_gltf_viewer     - glTF model viewer"
+echo ""
+echo "======================================"
+echo "SDK files were NOT installed automatically."
+echo "To compile Vulkan programs, manually copy the following:"
+echo ""
+echo "  copy SDK/include/include_h/vulkan SDK:include/include_h/vulkan ALL CLONE"
+echo "  copy SDK/include/include_h/interfaces/vulkan.h SDK:include/include_h/interfaces/"
+echo "  copy SDK/include/include_h/inline4/vulkan.h SDK:include/include_h/inline4/"
+echo "  copy SDK/include/include_h/proto/vulkan.h SDK:include/include_h/proto/"
+echo "  copy SDK/include/include_h/clib/vulkan_protos.h SDK:include/include_h/clib/"
+echo "  copy SDK/newlib/lib/libvulkan_loader.a SDK:newlib/lib/"
+echo ""
+echo "Then compile with:  gcc -D__USE_INLINE__ -o app app.c -lvulkan_loader -lauto"
+echo "======================================"
