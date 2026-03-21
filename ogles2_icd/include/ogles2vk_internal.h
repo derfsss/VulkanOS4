@@ -19,8 +19,8 @@
 **----------------------------------------------------------------------*/
 #define LIBNAME     "ogles2_vk.library"
 #define LIBVER      1
-#define LIBREV      1
-#define LIBVSTRING  "ogles2_vk.library 1.1 (19.03.2026)"
+#define LIBREV      2
+#define LIBVSTRING  "ogles2_vk.library 1.2 (21.03.2026)"
 
 /*------------------------------------------------------------------------
 ** Library base structure
@@ -191,8 +191,30 @@ typedef struct OGLES2VKDescriptorSet
 } OGLES2VKDescriptorSet;
 
 /*------------------------------------------------------------------------
+** SPIR-V to GLSL transpile result (SPIRV-Cross)
+**----------------------------------------------------------------------*/
+#define OGLES2VK_MAX_SAMPLERS 8
+
+typedef struct OGLES2VKTranspileResult
+{
+    char    *glsl;                /* GLSL source (AllocVecTags, caller frees) */
+    /* Push constant vec4 array */
+    char     pcArrayName[64];    /* "PushConstants" or "" if none */
+    uint32_t pcArraySize;        /* Number of vec4s (0 = no push constants) */
+    /* Sampler info from reflection */
+    uint32_t samplerCount;
+    struct {
+        char     name[64];       /* Uniform name in GLSL (e.g. "tex") */
+        uint32_t set;
+        uint32_t binding;
+    } samplers[OGLES2VK_MAX_SAMPLERS];
+} OGLES2VKTranspileResult;
+
+/*------------------------------------------------------------------------
 ** Shader module
 ** Stores SPIR-V code. GPU compilation happens lazily at first draw.
+** Transpile result is cached so metadata survives across pipelines
+** that share the same shader module.
 **----------------------------------------------------------------------*/
 typedef struct OGLES2VKShaderModule
 {
@@ -200,6 +222,7 @@ typedef struct OGLES2VKShaderModule
     uint32_t        wordCount;
     uint32_t        codeSize;    /* Size in bytes */
     uint32_t        glShader;    /* GLuint shader handle (0 = not compiled) */
+    OGLES2VKTranspileResult transpile; /* Cached SPIRV-Cross reflection data */
 } OGLES2VKShaderModule;
 
 /*------------------------------------------------------------------------
@@ -223,26 +246,6 @@ typedef struct OGLES2VKPipelineCache
 {
     uint32_t placeholder;
 } OGLES2VKPipelineCache;
-
-/*------------------------------------------------------------------------
-** SPIR-V to GLSL transpile result (SPIRV-Cross)
-**----------------------------------------------------------------------*/
-#define OGLES2VK_MAX_SAMPLERS 8
-
-typedef struct OGLES2VKTranspileResult
-{
-    char    *glsl;                /* GLSL source (AllocVecTags, caller frees) */
-    /* Push constant vec4 array */
-    char     pcArrayName[64];    /* "PushConstants" or "" if none */
-    uint32_t pcArraySize;        /* Number of vec4s (0 = no push constants) */
-    /* Sampler info from reflection */
-    uint32_t samplerCount;
-    struct {
-        char     name[64];       /* Uniform name in GLSL (e.g. "tex") */
-        uint32_t set;
-        uint32_t binding;
-    } samplers[OGLES2VK_MAX_SAMPLERS];
-} OGLES2VKTranspileResult;
 
 /*------------------------------------------------------------------------
 ** Graphics pipeline

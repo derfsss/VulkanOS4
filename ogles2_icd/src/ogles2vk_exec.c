@@ -372,26 +372,21 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
         return 0;
     }
 
-    /* Transpile result structs for vert/frag metadata */
-    OGLES2VKTranspileResult vertResult;
-    OGLES2VKTranspileResult fragResult;
-    memset(&vertResult, 0, sizeof(vertResult));
-    memset(&fragResult, 0, sizeof(fragResult));
-
-    /* Compile vertex shader via SPIRV-Cross transpiler */
+    /* Compile vertex shader via SPIRV-Cross transpiler (if not already done) */
     if (!pipe->vertShader->glShader)
     {
         uint32_t vs = IOGLES2->glCreateShader(GL_VERTEX_SHADER);
         if (!vs) return 0;
 
         int32 status = 0;
+        OGLES2VKTranspileResult *vr = &pipe->vertShader->transpile;
 
         if (ogles2vk_SPIRV2GLSL(pipe->vertShader->codeOrig,
                 pipe->vertShader->wordCount, pipe->vertShader->codeSize,
-                1, &vertResult) && vertResult.glsl)
+                1, vr) && vr->glsl)
         {
-            IExec->DebugPrintF("[ogles2_vk] SPIRV-Cross vert GLSL:\n%s\n", vertResult.glsl);
-            const char *src = vertResult.glsl;
+            IExec->DebugPrintF("[ogles2_vk] SPIRV-Cross vert GLSL:\n%s\n", vr->glsl);
+            const char *src = vr->glsl;
             IOGLES2->glShaderSource(vs, 1, &src, NULL);
             IOGLES2->glCompileShader(vs);
 
@@ -410,7 +405,6 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
             IOGLES2->glGetShaderInfoLog(vs, sizeof(log)-1, NULL, log);
             IExec->DebugPrintF("[ogles2_vk] Vert shader FAILED: %s\n", log);
             IOGLES2->glDeleteShader(vs);
-            if (vertResult.glsl) IExec->FreeVec(vertResult.glsl);
             return 0;
         }
 
@@ -419,24 +413,21 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
                            (unsigned long)vs);
     }
 
-    /* Compile fragment shader via SPIRV-Cross transpiler */
+    /* Compile fragment shader via SPIRV-Cross transpiler (if not already done) */
     if (!pipe->fragShader->glShader)
     {
         uint32_t fs = IOGLES2->glCreateShader(GL_FRAGMENT_SHADER);
-        if (!fs)
-        {
-            if (vertResult.glsl) IExec->FreeVec(vertResult.glsl);
-            return 0;
-        }
+        if (!fs) return 0;
 
         int32 status = 0;
+        OGLES2VKTranspileResult *fr = &pipe->fragShader->transpile;
 
         if (ogles2vk_SPIRV2GLSL(pipe->fragShader->codeOrig,
                 pipe->fragShader->wordCount, pipe->fragShader->codeSize,
-                0, &fragResult) && fragResult.glsl)
+                0, fr) && fr->glsl)
         {
-            IExec->DebugPrintF("[ogles2_vk] SPIRV-Cross frag GLSL:\n%s\n", fragResult.glsl);
-            const char *src = fragResult.glsl;
+            IExec->DebugPrintF("[ogles2_vk] SPIRV-Cross frag GLSL:\n%s\n", fr->glsl);
+            const char *src = fr->glsl;
             IOGLES2->glShaderSource(fs, 1, &src, NULL);
             IOGLES2->glCompileShader(fs);
 
@@ -455,8 +446,6 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
             IOGLES2->glGetShaderInfoLog(fs, sizeof(log)-1, NULL, log);
             IExec->DebugPrintF("[ogles2_vk] Frag shader FAILED: %s\n", log);
             IOGLES2->glDeleteShader(fs);
-            if (vertResult.glsl) IExec->FreeVec(vertResult.glsl);
-            if (fragResult.glsl) IExec->FreeVec(fragResult.glsl);
             return 0;
         }
 
@@ -468,11 +457,7 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
     /* Link program */
     uint32_t prog = IOGLES2->glCreateProgram();
     if (!prog)
-    {
-        if (vertResult.glsl) IExec->FreeVec(vertResult.glsl);
-        if (fragResult.glsl) IExec->FreeVec(fragResult.glsl);
         return 0;
-    }
 
     IOGLES2->glAttachShader(prog, pipe->vertShader->glShader);
     IOGLES2->glAttachShader(prog, pipe->fragShader->glShader);
@@ -486,8 +471,6 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
         IOGLES2->glGetProgramInfoLog(prog, sizeof(log)-1, NULL, log);
         IExec->DebugPrintF("[ogles2_vk] Program link error: %s\n", log);
         IOGLES2->glDeleteProgram(prog);
-        if (vertResult.glsl) IExec->FreeVec(vertResult.glsl);
-        if (fragResult.glsl) IExec->FreeVec(fragResult.glsl);
         return 0;
     }
 
@@ -495,16 +478,20 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
     IExec->DebugPrintF("[ogles2_vk] Shader program linked (GL %lu)\n",
                        (unsigned long)prog);
 
+    /* Use cached transpile results from shader modules (survive across pipelines) */
+    OGLES2VKTranspileResult *vertResult = &pipe->vertShader->transpile;
+    OGLES2VKTranspileResult *fragResult = &pipe->fragShader->transpile;
+
     /* Look up push constant vec4 array uniform from SPIRV-Cross result.
     ** Both vert and frag may have push constants; prefer whichever has them. */
     pipe->pcArrayLoc = -1;
     pipe->pcArraySize = 0;
     {
         OGLES2VKTranspileResult *pcResult = NULL;
-        if (vertResult.pcArraySize > 0)
-            pcResult = &vertResult;
-        else if (fragResult.pcArraySize > 0)
-            pcResult = &fragResult;
+        if (vertResult->pcArraySize > 0)
+            pcResult = vertResult;
+        else if (fragResult->pcArraySize > 0)
+            pcResult = fragResult;
 
         if (pcResult)
         {
@@ -532,7 +519,7 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
     pipe->samplerCount = 0;
     memset(pipe->samplerLocs, 0xFF, sizeof(pipe->samplerLocs)); /* -1 */
     {
-        OGLES2VKTranspileResult *sampResults[2] = { &vertResult, &fragResult };
+        OGLES2VKTranspileResult *sampResults[2] = { vertResult, fragResult };
         for (int r = 0; r < 2; r++)
         {
             OGLES2VKTranspileResult *sr = sampResults[r];
@@ -549,10 +536,6 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
             }
         }
     }
-
-    /* Free transpile results */
-    if (vertResult.glsl) IExec->FreeVec(vertResult.glsl);
-    if (fragResult.glsl) IExec->FreeVec(fragResult.glsl);
 
     return 1;
 }
@@ -1201,7 +1184,7 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                 int32 instIdLoc = -1;
                 if (instCount > 1 && curPipeline && curPipeline->glProgram)
                     instIdLoc = IOGLES2->glGetUniformLocation(
-                        curPipeline->glProgram, "gl_InstanceIndex");
+                        curPipeline->glProgram, "u_InstanceIndex");
 
                 if (isIndexed)
                 {
@@ -1666,7 +1649,7 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                     int32 instIdLoc = -1;
                     if (instCount > 1 && curPipeline->glProgram)
                         instIdLoc = IOGLES2->glGetUniformLocation(
-                            curPipeline->glProgram, "gl_InstanceIndex");
+                            curPipeline->glProgram, "u_InstanceIndex");
 
                     for (uint32_t inst = 0; inst < instCount; inst++)
                     {
@@ -1727,7 +1710,7 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                         int32 instIdLoc = -1;
                         if (instCount > 1 && curPipeline->glProgram)
                             instIdLoc = IOGLES2->glGetUniformLocation(
-                                curPipeline->glProgram, "gl_InstanceIndex");
+                                curPipeline->glProgram, "u_InstanceIndex");
 
                         for (uint32_t inst = 0; inst < instCount; inst++)
                         {

@@ -80,6 +80,7 @@ examples: loader
 	$(MAKE) -C examples/18_query_demo all
 	$(MAKE) -C examples/19_indirect_draw all
 	$(MAKE) -C examples/20_torus all
+	$(MAKE) -C examples/23_cow3d all
 	$(MAKE) -C examples/21_image_texture all
 	$(MAKE) -C examples/22_gltf_viewer all
 
@@ -202,6 +203,14 @@ dist:
 	cp build/20_torus                    dist/VulkanOS4/Examples/20_torus/
 	cp examples/20_torus/20_torus.c      dist/VulkanOS4/Examples/20_torus/
 	cp -r examples/20_torus/shaders      dist/VulkanOS4/Examples/20_torus/
+	mkdir -p dist/VulkanOS4/Examples/23_cow3d
+	cp build/23_cow3d                    dist/VulkanOS4/Examples/23_cow3d/
+	cp examples/23_cow3d/23_cow3d.c      dist/VulkanOS4/Examples/23_cow3d/
+	cp examples/23_cow3d/cow_points.inc  dist/VulkanOS4/Examples/23_cow3d/
+	cp examples/23_cow3d/cow_indices.inc dist/VulkanOS4/Examples/23_cow3d/
+	cp examples/23_cow3d/Cow_256X256X32.RAW dist/VulkanOS4/Examples/23_cow3d/
+	cp examples/23_cow3d/Cosmos_256X256X32.RAW dist/VulkanOS4/Examples/23_cow3d/
+	cp -r examples/23_cow3d/shaders      dist/VulkanOS4/Examples/23_cow3d/
 	mkdir -p dist/VulkanOS4/Examples/21_image_texture
 	cp build/21_image_texture            dist/VulkanOS4/Examples/21_image_texture/
 	cp examples/21_image_texture/21_image_texture.c dist/VulkanOS4/Examples/21_image_texture/
@@ -226,7 +235,8 @@ dist:
 	@# Tests (W3D Nova GPU tests)
 	-cp build/test_w3dn_init          dist/VulkanOS4/Tests/ 2>/dev/null || true
 	-cp build/test_w3dn_triangle      dist/VulkanOS4/Tests/ 2>/dev/null || true
-	@# Install script
+	@# README and install script
+	cp README.txt                     dist/VulkanOS4/
 	cp Autoinstall                    dist/VulkanOS4/
 	cp Autoinstall.info               dist/VulkanOS4/
 	@echo "Distribution created in dist/VulkanOS4/"
@@ -254,7 +264,7 @@ check: all
 	@file build/software_vk.library | grep "ELF 32-bit MSB" || (echo "FAIL: software_vk.library" && exit 1)
 	@file build/ogles2_vk.library | grep "ELF 32-bit MSB" || (echo "FAIL: ogles2_vk.library" && exit 1)
 	@echo "Checking example binaries..."
-	@for ex in 01_enumerate 02_clear 03_gradient 04_checkerboard 05_plasma 06_rings 07_waves 08_triangle 09_rotating 10_depth 11_textured 12_wireframe_cube 13_solid_cube 14_instanced_cubes 15_render_pass 16_transfer_ops 17_events_sync 18_query_demo 19_indirect_draw 20_torus 21_image_texture 22_gltf_viewer; do \
+	@for ex in 01_enumerate 02_clear 03_gradient 04_checkerboard 05_plasma 06_rings 07_waves 08_triangle 09_rotating 10_depth 11_textured 12_wireframe_cube 13_solid_cube 14_instanced_cubes 15_render_pass 16_transfer_ops 17_events_sync 18_query_demo 19_indirect_draw 20_torus 23_cow3d 21_image_texture 22_gltf_viewer; do \
 		file build/$$ex | grep "ELF 32-bit MSB" > /dev/null || (echo "FAIL: $$ex" && exit 1); \
 	done
 	@echo "Checking tools..."

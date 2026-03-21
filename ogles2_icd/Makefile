@@ -19,7 +19,8 @@ SPVC_SRCS = spirv_cfg.cpp spirv_cross_parsed_ir.cpp spirv_cross.cpp \
             spirv_glsl.cpp spirv_parser.cpp spirv_cross_c.cpp
 SPVC_CXX = ppc-amigaos-g++ -std=c++11 -O2 -mcrt=newlib \
            -fno-exceptions -fno-rtti \
-           -DSPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS -DNDEBUG
+           -DSPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS -DNDEBUG \
+           -DSPIRV_CROSS_C_API_GLSL=1
 
 .PHONY: all clean
 
@@ -41,6 +42,9 @@ $(TARGET):
 		mkdir -p $$SDK/GLES2 && \
 		cp external/OGLES2/GLES2/*.h $$SDK/GLES2/ && \
 		mkdir -p build && \
+		echo "--- Patching SPIRV-Cross for AmigaOS shared library ---" && \
+		sed -i "s/static const unordered_set<string> keywords/const unordered_set<string> keywords/" \
+			$(SPVC_DIR)/spirv_glsl.cpp && \
 		echo "--- Building SPIRV-Cross static library ---" && \
 		for src in $(SPVC_SRCS); do \
 			obj=$$(echo $$src | sed "s/.cpp/.o/"); \

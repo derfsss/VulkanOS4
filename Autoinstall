@@ -20,6 +20,11 @@ echo "VulkanOS4 -- Vulkan 1.3 for AmigaOS 4"
 echo "======================================"
 echo ""
 
+; Flush any previously loaded libraries from memory so the new
+; versions are picked up immediately without requiring a reboot
+echo "Flushing old libraries from memory..."
+Avail FLUSH >NIL:
+
 ; Create target directories (ignore errors if they already exist)
 failat 21
 makedir LIBS:Vulkan ALL
@@ -46,6 +51,9 @@ echo "Installing tools..."
 copy Tools/VulkanPrefs C:VulkanPrefs CLONE QUIET
 copy Tools/vulkaninfo C:vulkaninfo CLONE QUIET
 
+; Flush again after install so the newly copied libraries are loaded fresh
+Avail FLUSH >NIL:
+
 echo ""
 echo "Runtime installation complete."
 echo ""
@@ -57,11 +65,11 @@ echo "Tools installed to C: (available from any shell):"
 echo "  vulkaninfo   - Show Vulkan device information"
 echo "  VulkanPrefs  - Manage ICD priority and settings"
 echo ""
-echo "To run examples (22 included):"
+echo "To run examples (23 included):"
 echo "  Examples/08_triangle/08_triangle     - RGB triangle"
 echo "  Examples/09_rotating/09_rotating     - Spinning triangle"
 echo "  Examples/20_torus/20_torus           - Textured torus + starfield"
-echo "  Examples/21_image_texture/21_image_texture - Image file texture"
+echo "  Examples/23_cow3d/23_cow3d           - Textured 3D cow (Cow3D port)"
 echo "  Examples/22_gltf_viewer/22_gltf_viewer     - glTF model viewer"
 echo ""
 echo "======================================"

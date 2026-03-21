@@ -56,12 +56,19 @@ Header-only libraries are placed in the `external/` directory.
 
 ## OGLES2 SDK Headers
 
-- **Source:** AmigaOS 4 SDK (ogles2.library)
+- **Source:** AmigaOS 4 SDK (ogles2.library by Daniel Muessener)
 - **License:** Proprietary (A-EON Technology)
 - **Usage:** GPU ICD backend interface headers in `external/OGLES2/`.
 
 ## Warp3D Nova SDK Headers
 
-- **Source:** AmigaOS 4 SDK (Warp3DNova.library)
+- **Source:** AmigaOS 4 SDK (Warp3DNova.library by Hans de Ruiter)
 - **License:** Proprietary (A-EON Technology)
 - **Usage:** GPU hardware access headers in `external/Warp3DNova/`.
+
+## Cow3D -- 3D Cow Model
+
+- **Author:** Alain Thellier
+- **License:** Public domain
+- **Usage:** 3D cow model data (2914 vertices, 5813 triangles) and
+  256x256 texture for example 23_cow3d.

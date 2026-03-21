@@ -83,20 +83,21 @@ existing Radeon driver infrastructure.
 |  +-------------+  +--------------+  +------------------------+  |
 +---------------------------+-------------------------------------+
 |   radeon_vk.library       |    software_vk.library              |
-|   (Hardware ICD)          |    (Software ICD - Section 16)      |
-|                           |                                     |
+|   (RadeonGCN project)     |    (Software ICD - Section 16)      |
+|   GCN 1.0-5.0 (HD 7000   |                                     |
+|    through Vega)          |                                     |
 |  +----------+ +--------+  |  +------------+ +----------------+  |
-|  | SPIR-V   | | Cmd    |  |  | SPIR-V     | | Software       |  |
-|  | Compiler | | Buffer |  |  | Interpreter| | Rasteriser     |  |
-|  | (ACO)    | | Builder|  |  | (or JIT)   | | (CPU-based)    |  |
+|  | Mesa radv| | AmigaOS|  |  | SPIR-V     | | Software       |  |
+|  | + ACO    | | winsys |  |  | Interpreter| | Rasteriser     |  |
+|  | compiler | | backend|  |  | (or JIT)   | | (CPU-based)    |  |
 |  +----------+ +--------+  |  +------------+ +----------------+  |
 +---------------------------+                                     |
-|  AmigaOS 4 Kernel         |  Renders to system memory,          |
+|  AmigaOS 4 / clib4        |  Renders to system memory,          |
 |  expansion.library        |  blits to Intuition window          |
 |  PCIe MMIO / DMA / IRQs   |                                     |
 +---------------------------+                                     |
-|  AMD Radeon RX 580        |  No GPU hardware required           |
-|  (GCN 4.0)                |  (validation / fallback)            |
+|  AMD Radeon HD 7000 -     |  No GPU hardware required           |
+|  RX Vega (GCN 1.0-5.0)   |  (validation / fallback)            |
 +---------------------------+-------------------------------------+
 ```
 
@@ -2130,34 +2131,28 @@ hardware ICD (Stream B) targets GPU-accelerated rendering. Wrappers
 - Create working example programs with Makefiles (Section 17.8)
 - Validate loader against `software_vk.library` from Stream A
 
-**Phase B1: Radeon ICD bring-up**
-- PCIe device enumeration and GPU initialisation via `expansion.library`
-  (Section 14.5)
-- VRAM memory manager (buddy allocator for device-local memory)
-- Command ring buffer setup (GFX ring for graphics, compute ring)
-- Basic command buffer building (PM4 packet format for GCN)
-- PPC cache coherency for DMA (Section 13.5)
-- Write-combining for BAR access (Section 13.6)
-- Basic presentation: zero-copy GPU scanout (Section 13.4)
+**RadeonGCN -- EXTERNAL PROJECT (radeon_vk.library)**
 
-**Phase B2: Radeon ICD rendering pipeline**
-- SPIR-V to GCN ISA compiler (port ACO backend)
-- Pipeline cache with disk serialisation (Section 13.7)
-- Graphics pipeline creation (VS + PS, rasteriser state)
-- Vertex buffer binding and index buffer support
-- Basic 2D/3D rendering (triangles, indexed draws)
-- Texture sampling (image views, samplers)
-- Descriptor sets and push constants
-- Endianness handling: MC_SWAP + lwbrx/stwbrx (Section 14.6)
+The GCN hardware ICD is developed as a separate project (RadeonGCN)
+with its own repository. It produces radeon_vk.library which installs
+into LIBS:Vulkan/ and is discovered by the loader via the standard
+JSON manifest mechanism (DEVS:Vulkan/icd.d/radeon_vk.json).
 
-**Phase B3: Radeon ICD completeness**
-- Compute pipelines and dispatch
-- All remaining Vulkan 1.3 core functions
-- Synchronisation primitives (timeline semaphores, etc.)
-- Multi-threaded command buffer recording (Section 13.8)
-- Synchronisation: memory-mapped fences, hybrid poll/interrupt (Section 13.10)
-- Performance optimisation and testing
-- Validation layer port (`DEVS:Vulkan/layers.d/`)
+Approach: port Mesa radv (MIT license) with an AmigaOS winsys backend,
+replacing the Linux DRM/libdrm layer with direct PCIe access via
+expansion.library. Linked against clib4 for POSIX compatibility
+(pthreads, dlopen, POSIX I/O). Mesa's ACO shader compiler generates
+GCN ISA regardless of host CPU -- cross-compiles to PPC unchanged.
+
+Covers all GCN generations with one driver binary:
+- GCN 1.0 / GFX6 (Southern Islands, HD 7000)
+- GCN 1.1 / GFX7 (Sea Islands, R7/R9 200)
+- GCN 1.2 / GFX8 (Volcanic Islands, R9 300/Fury; Polaris, RX 400/500)
+- GCN 5.0 / GFX9 (Vega)
+
+See RadeonGCN project documentation for phases and progress.
+See Section 13.4-13.10 and 14.5-14.6 of this document for the
+AmigaOS-specific hardware access design (PCIe, WIMG, endianness).
 
 ### Stream C: Compatibility Wrappers -- see Section 15
 
@@ -2199,21 +2194,21 @@ hardware ICD (Stream B) targets GPU-accelerated rendering. Wrappers
 ### Timeline Dependencies
 
 ```
-Stream A (Software ICD)     Stream B (Hardware ICD)     Stream C (Wrappers)
--------------------------   --------------------------  --------------------
+Stream A (Software ICD)     RadeonGCN (external)          Stream C (Wrappers)
+-------------------------   ----------------------------  --------------------
 Phase A0 --------------+
   (triangle test)      |
                        +--> Phase B0 (loader)
-Phase A1 --------------+      |
-  (textures)           |      v
-                       |    Phase B1 (GPU bring-up)
-                       |      |
-                       |      v
-                       +--> Phase B2 (rendering) ------> Phase C0 (W3DN)
-Phase A2 --------------+      |                          Phase C1 (ogles2)
-  (JIT, optional)      |      v
-                       |    Phase B3 (complete) -------> Phase C2 (legacy)
-                       |                                 Phase C3 (ecosystem)
+Phase A1 --------------+
+  (textures)           |    RadeonGCN project
+                       |    (separate repo, Mesa radv
+                       |     port with AmigaOS winsys)
+                       |           |
+                       |           v
+                       |    radeon_vk.library ----------> Phase C0 (W3DN)
+Phase A2 --------------+    (installs to LIBS:Vulkan/)    Phase C1 (ogles2)
+  (JIT, optional)      |                                  Phase C2 (legacy)
+                       |                                  Phase C3 (ecosystem)
                        |
                        +--> Stream D (SDK tools, at any time)
 ```
@@ -2630,7 +2625,7 @@ multi-minute load times.
 **1. Pipeline cache serialisation to disk**
 
 `vkCreatePipelineCache` / `vkGetPipelineCacheData` must be fully implemented.
-The ICD must store compiled GCN/RDNA ISA binaries in the cache, keyed by
+The ICD must store compiled GCN ISA binaries in the cache, keyed by
 SPIR-V hash + pipeline state hash. Applications that serialise the cache to
 disk (standard Vulkan practice) will only compile each shader once, ever.
 
@@ -2663,8 +2658,9 @@ host:
 
 ```bash
 # On developer's x86 machine (fast):
-amivk-compile --target=gcn4 --spirv=shader.vert.spv --output=shader.vert.gcn
-amivk-compile --target=gcn4 --spirv=shader.frag.spv --output=shader.frag.gcn
+amivk-compile --target=gfx8 --spirv=shader.vert.spv --output=shader.vert.gcn
+amivk-compile --target=gfx8 --spirv=shader.frag.spv --output=shader.frag.gcn
+# Targets: gfx6 (GCN 1.0), gfx7 (GCN 1.1), gfx8 (GCN 1.2/Polaris), gfx9 (Vega)
 
 # Ship pre-compiled .gcn files with the application
 # ICD detects pre-compiled binary in pipeline cache -- zero compilation on PPC

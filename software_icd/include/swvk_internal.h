@@ -19,8 +19,8 @@
 **----------------------------------------------------------------------*/
 #define LIBNAME     "software_vk.library"
 #define LIBVER      1
-#define LIBREV      1
-#define LIBVSTRING  "software_vk.library 1.1 (19.03.2026)"
+#define LIBREV      2
+#define LIBVSTRING  "software_vk.library 1.2 (21.03.2026)"
 
 /*------------------------------------------------------------------------
 ** Library base structure

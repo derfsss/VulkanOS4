@@ -455,7 +455,7 @@ static struct Library *_lib_Init(struct Library *libBase, BPTR seglist,
     /* Discover GPU at library init time */
     _discover_gpu();
 
-    IExec->DebugPrintF("[ogles2_vk] Initialized v%ld.%ld\n",
+    IExec->DebugPrintF("[ogles2_vk] Initialized v%ld.%ld (built " __DATE__ " " __TIME__ ")\n",
                        (long)LIBVER, (long)LIBREV);
 
     return (struct Library *)base;

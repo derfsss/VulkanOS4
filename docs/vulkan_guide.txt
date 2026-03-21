@@ -297,7 +297,7 @@ Known limitations:
     Phase X2    -- Ecosystem ports (VMA, SPIRV-Cross, spirv-tools, CTS)
     Phase W3    -- SDL2 + Cairo Vulkan backends
     Phase W1-W2 -- Compatibility wrappers (W3D Nova/OGLES2 -> Vulkan)
-    Phase B1-B3 -- Direct hardware ICD (PCIe MMIO, GCN, SPIR-V->GCN)
+    RadeonGCN   -- External project: Mesa radv port for GCN (HD 7000 - Vega)
     Phase C1    -- Vulkan display compositor (GPU-rendered Workbench)
 
 
