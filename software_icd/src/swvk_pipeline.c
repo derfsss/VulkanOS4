@@ -16,6 +16,12 @@
 #include "swvk_internal.h"
 #include "swvk_spirv.h"
 
+#ifdef DEBUG
+#define D(x) IExec->DebugPrintF x
+#else
+#define D(x) do {} while (0)
+#endif
+
 /****************************************************************************/
 /* Shader module creation                                                   */
 /****************************************************************************/
@@ -59,23 +65,43 @@ VkResult swvk_CreateShaderModule(VkDevice device,
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    /* Byte-swap all SPIR-V words from little-endian to big-endian.
-    ** SPIR-V is defined as a stream of 32-bit LE words.
-    ** AmigaOS 4 on PowerPC is big-endian, so we must swap. */
-    for (uint32_t i = 0; i < wordCount; i++)
-        mod->code[i] = __builtin_bswap32(pCreateInfo->pCode[i]);
+    /* Detect SPIR-V endianness from the magic number and swap only when
+    ** needed. Per the Vulkan spec, the magic word may be supplied in either
+    ** endianness — the driver must accept both. The previous unconditional
+    ** byte-swap was wrong for callers that already produce host-byte-order
+    ** SPIR-V (e.g. uint32_t array literals compiled on a big-endian host
+    ** like ImGui's __glsl_shader_*_spv on PowerPC). Reading the first word
+    ** as raw bytes gives us a byte-order-independent way to decide. */
+    {
+        const unsigned char *firstBytes = (const unsigned char *)pCreateInfo->pCode;
+        /* Big-endian magic: 07 23 02 03   Little-endian magic: 03 02 23 07 */
+        int needSwap;
+        if (firstBytes[0] == 0x03 && firstBytes[1] == 0x02 &&
+            firstBytes[2] == 0x23 && firstBytes[3] == 0x07) {
+            needSwap = 1;   /* SPIR-V stream is LE, host is BE — swap */
+        } else if (firstBytes[0] == 0x07 && firstBytes[1] == 0x23 &&
+                   firstBytes[2] == 0x02 && firstBytes[3] == 0x03) {
+            needSwap = 0;   /* SPIR-V stream is already BE — copy verbatim */
+        } else {
+            D(("[software_vk] Invalid SPIR-V magic bytes: "
+                               "%02x %02x %02x %02x\n",
+                               firstBytes[0], firstBytes[1],
+                               firstBytes[2], firstBytes[3]));
+            IExec->FreeVec(mod->code);
+            IExec->FreeVec(mod);
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+
+        if (needSwap) {
+            for (uint32_t i = 0; i < wordCount; i++)
+                mod->code[i] = __builtin_bswap32(pCreateInfo->pCode[i]);
+        } else {
+            for (uint32_t i = 0; i < wordCount; i++)
+                mod->code[i] = pCreateInfo->pCode[i];
+        }
+    }
 
     mod->wordCount = wordCount;
-
-    /* Validate magic number (after byte-swap) */
-    if (mod->code[0] != SPV_MAGIC_NUMBER)
-    {
-        IExec->DebugPrintF("[software_vk] Invalid SPIR-V magic: 0x%08lx\n",
-                           (unsigned long)mod->code[0]);
-        IExec->FreeVec(mod->code);
-        IExec->FreeVec(mod);
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
 
     /* Allocate and parse the SPIR-V module structure */
     mod->parsed = (SpvModule *)IExec->AllocVecTags(
@@ -97,7 +123,7 @@ VkResult swvk_CreateShaderModule(VkDevice device,
     int parseResult = spv_ParseModule(mod->parsed, mod->code, mod->wordCount);
     if (parseResult != 0)
     {
-        IExec->DebugPrintF("[software_vk] SPIR-V parse failed\n");
+        D(("[software_vk] SPIR-V parse failed\n"));
         IExec->FreeVec(mod->parsed);
         IExec->FreeVec(mod->code);
         IExec->FreeVec(mod);
@@ -107,12 +133,12 @@ VkResult swvk_CreateShaderModule(VkDevice device,
     /* Pre-compile the parsed module for faster execution.
     ** Non-fatal if compilation fails -- falls back to interpreter. */
     if (spv_CompileProgram(mod->parsed) != 0)
-        IExec->DebugPrintF("[software_vk] SPIR-V pre-compile skipped (non-fatal)\n");
+        D(("[software_vk] SPIR-V pre-compile skipped (non-fatal)\n"));
 
     *pShaderModule = (VkShaderModule)(uintptr_t)mod;
 
-    IExec->DebugPrintF("[software_vk] Shader module created: %lu words\n",
-                       (unsigned long)wordCount);
+    D(("[software_vk] Shader module created: %lu words\n",
+                       (unsigned long)wordCount));
 
     return VK_SUCCESS;
 }
@@ -329,8 +355,8 @@ VkResult swvk_CreateRenderPass(VkDevice device,
 
     *pRenderPass = (VkRenderPass)(uintptr_t)rp;
 
-    IExec->DebugPrintF("[software_vk] Render pass created: %lu attachments\n",
-                       (unsigned long)rp->attachmentCount);
+    D(("[software_vk] Render pass created: %lu attachments\n",
+                       (unsigned long)rp->attachmentCount));
 
     return VK_SUCCESS;
 }
@@ -387,9 +413,9 @@ VkResult swvk_CreateFramebuffer(VkDevice device,
 
     *pFramebuffer = (VkFramebuffer)(uintptr_t)fb;
 
-    IExec->DebugPrintF("[software_vk] Framebuffer created: %lux%lu, %lu attachments\n",
+    D(("[software_vk] Framebuffer created: %lux%lu, %lu attachments\n",
                        (unsigned long)fb->width, (unsigned long)fb->height,
-                       (unsigned long)fb->attachmentCount);
+                       (unsigned long)fb->attachmentCount));
 
     return VK_SUCCESS;
 }
@@ -543,9 +569,9 @@ VkResult swvk_CreateGraphicsPipelines(VkDevice device,
 
         pPipelines[i] = (VkPipeline)(uintptr_t)pipe;
 
-        IExec->DebugPrintF("[software_vk] Graphics pipeline created (vert=%s frag=%s)\n",
+        D(("[software_vk] Graphics pipeline created (vert=%s frag=%s)\n",
                            pipe->vertShader ? "yes" : "no",
-                           pipe->fragShader ? "yes" : "no");
+                           pipe->fragShader ? "yes" : "no"));
     }
 
     return VK_SUCCESS;
@@ -651,8 +677,8 @@ VkResult swvk_CreateRenderPass2(VkDevice device,
 
     *pRenderPass = (VkRenderPass)(uintptr_t)rp;
 
-    IExec->DebugPrintF("[software_vk] Render pass 2 created: %lu attachments\n",
-                       (unsigned long)rp->attachmentCount);
+    D(("[software_vk] Render pass 2 created: %lu attachments\n",
+                       (unsigned long)rp->attachmentCount));
 
     (void)device;
     return VK_SUCCESS;
