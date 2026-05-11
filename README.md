@@ -256,6 +256,54 @@ See [THIRD_PARTY.md](THIRD_PARTY.md) for full attribution details.
 
 ## Changelog
 
+### 1.3 -- 2026-05-11
+
+ABI and compatibility fixes; build hygiene. Many of the underlying
+issues were diagnosed by Andrea Palmate' ([afxgroup](https://github.com/afxgroup))
+in [PR #1](https://github.com/derfsss/VulkanOS4/pull/1).
+
+ICD changes:
+- Fix `vkGetDeviceProcAddr` ABI: the GPU ICD's `LookupRawProcAddr`
+  previously fell back to APICALL trampolines for unlisted names,
+  which slid every argument by one register slot when called as raw
+  `PFN_vk*`. Expanded the `RAW` table to mirror the full `DISPATCH`
+  table (~210 entries) and replaced the fallback with `return NULL`.
+  Also extended the SW ICD's `RAW` table with the four surface queries
+  and five swapchain entry points it was missing.
+- Detect SPIR-V endianness from the magic word in the SW ICD, rather
+  than unconditionally byte-swapping. Per the Vulkan spec, the magic
+  word may be supplied in either endianness. The previous behaviour
+  was wrong for callers that already produce host-byte-order SPIR-V
+  (e.g. `uint32_t` array literals compiled on a big-endian host such
+  as ImGui's `__glsl_shader_*_spv` arrays on PowerPC).
+- GPU ICD: force `FORCE_FLATTENED_IO_BLOCKS` in SPIRV-Cross and rename
+  vertex/fragment interface-block instances to a common `vary` so
+  Warp3D Nova's name-based GLSL ES linker can match varyings across
+  stages.
+- GPU ICD: add `VK_FORMAT_R8G8B8A8_UNORM` (VkFormat 37) to the vertex
+  attribute mapping with `GL_TRUE` for the normalised flag. ImGui
+  packs vertex colour in this format.
+- GPU ICD: set non-zero defaults for `bufferImageGranularity`,
+  `nonCoherentAtomSize`, the various `min*OffsetAlignment` and
+  `max*Range` limits. VMA divides by some of these during init and
+  on every allocation; zeroes caused `vmaCreateImage` to bail out
+  with `VK_ERROR_OUT_OF_DEVICE_MEMORY` before calling
+  `vkAllocateMemory`.
+- Add a `D(...)` debug-print macro to both ICDs (no-op when `DEBUG`
+  is undefined) and convert the existing `IExec->DebugPrintF` call
+  sites. Lets release builds skip the trace overhead.
+
+Build / loader:
+- Wire `$(DEBUG)` into the Docker build recipes for the loader and
+  both ICDs (previously the variable existed but never reached the
+  compiler).
+- Refactor `software_icd/Makefile.cross` to use pattern rules instead
+  of a single 80-line `&&`-chained shell pipeline; supports
+  incremental builds and `make -j`.
+- Replace `strncpy` + manual null-terminate with `snprintf` in the
+  loader ICD path tracking to silence a `-Wstringop-truncation`
+  warning.
+
 ### 1.0.0 -- 2026-03-20
 
 Initial release.
