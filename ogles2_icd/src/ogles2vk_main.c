@@ -1684,8 +1684,24 @@ static PFN_vkVoidFunction ogles2vk_LookupRawProcAddr(const char *pName)
 
     #undef RAW
 
-    /* Fall back to trampoline lookup for functions already in loader VulkanIFace */
-    return ogles2vk_LookupProcAddr(pName);
+    /*
+     * Do NOT fall back to ogles2vk_LookupProcAddr() here.
+     *
+     * That returns APICALL trampolines (libcall ABI: Self in r3, args in
+     * r4-r10) which are only valid when invoked via the AmigaOS interface
+     * dispatch. vkGetDeviceProcAddr() is supposed to hand back raw,
+     * standard-Vulkan-ABI function pointers that the application calls
+     * directly as PFN_vkXxx — feeding a libcall trampoline through that
+     * path makes every argument slide by one register slot at call time,
+     * which manifests as pCreateInfo/pSwapchain arriving as NULL in
+     * downstream functions like ogles2vk_CreateSwapchainKHR.
+     *
+     * Match software_vk's behaviour: return NULL for unknown names. The
+     * caller can then fall back to its own dispatch (e.g. through IVulkan
+     * with proper Self setup) for functions not represented in the RAW
+     * table — most notably the WSI swapchain entry points.
+     */
+    return NULL;
 }
 
 static PFN_vkVoidFunction APICALL _icd_GetInstanceProcAddr(
