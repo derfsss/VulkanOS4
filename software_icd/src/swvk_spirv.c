@@ -157,8 +157,8 @@ int spv_ParseModule(SpvModule *module, const uint32_t *code, uint32_t wordCount)
     /* Validate magic number (already byte-swapped) */
     if (code[0] != SPV_MAGIC_NUMBER)
     {
-        IExec->DebugPrintF("[software_vk] SPIR-V magic mismatch: 0x%08lx\n",
-                           (unsigned long)code[0]);
+        D(("[software_vk] SPIR-V magic mismatch: 0x%08lx\n",
+                           (unsigned long)code[0]));
         return -1;
     }
 
@@ -497,10 +497,10 @@ int spv_ParseModule(SpvModule *module, const uint32_t *code, uint32_t wordCount)
         pc += wc;
     }
 
-    IExec->DebugPrintF("[software_vk] SPIR-V parsed: %lu words, bound=%lu, entry=%lu\n",
+    D(("[software_vk] SPIR-V parsed: %lu words, bound=%lu, entry=%lu\n",
                        (unsigned long)wordCount,
                        (unsigned long)module->bound,
-                       (unsigned long)module->entryPointId);
+                       (unsigned long)module->entryPointId));
 
     return (module->entryPointId != 0) ? 0 : -1;
 }
@@ -4797,10 +4797,10 @@ void spv_BuildTemplate(SpvModule *mod)
 
     mod->templateBuilt = 1;
 
-    IExec->DebugPrintF("[software_vk] Template built: bound=%lu (%lu bytes values + %lu bytes ptrs)\n",
+    D(("[software_vk] Template built: bound=%lu (%lu bytes values + %lu bytes ptrs)\n",
                        (unsigned long)bound,
                        (unsigned long)(bound * sizeof(SpvValue)),
-                       (unsigned long)(bound * sizeof(SpvPointer)));
+                       (unsigned long)(bound * sizeof(SpvPointer))));
 }
 
 void spv_FreeTemplate(SpvModule *mod)
@@ -5799,8 +5799,8 @@ compile_done:
     /* Build template state for fast invocation setup */
     spv_BuildTemplate(module);
 
-    IExec->DebugPrintF("[software_vk] SPIR-V compiled: %lu instructions\n",
-                       (unsigned long)prog->instrCount);
+    D(("[software_vk] SPIR-V compiled: %lu instructions\n",
+                       (unsigned long)prog->instrCount));
 
     return 0;
 }

@@ -253,9 +253,9 @@ VkResult swvk_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
 
     *pInstance = (VkInstance)inst;
 
-    IExec->DebugPrintF("[software_vk] Instance created (API %lu.%lu)\n",
+    D(("[software_vk] Instance created (API %lu.%lu)\n",
                        (unsigned long)VK_API_VERSION_MAJOR(inst->apiVersion),
-                       (unsigned long)VK_API_VERSION_MINOR(inst->apiVersion));
+                       (unsigned long)VK_API_VERSION_MINOR(inst->apiVersion)));
 
     return VK_SUCCESS;
 }
@@ -268,7 +268,7 @@ void swvk_DestroyInstance(VkInstance instance,
     if (instance != VK_NULL_HANDLE)
     {
         IExec->FreeVec((APTR)instance);
-        IExec->DebugPrintF("[software_vk] Instance destroyed\n");
+        D(("[software_vk] Instance destroyed\n"));
     }
 }
 

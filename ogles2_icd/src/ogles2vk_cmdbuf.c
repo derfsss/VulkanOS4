@@ -24,8 +24,8 @@ static OGLES2VKCommand *ogles2vk_CmdAppend(OGLES2VKCommandBuffer *cmd, OGLES2VKC
 {
     if (cmd->commandCount >= OGLES2VK_MAX_COMMANDS)
     {
-        IExec->DebugPrintF("[ogles2_vk] WARNING: command buffer full (%u/%u)\n",
-                           (unsigned)cmd->commandCount, (unsigned)OGLES2VK_MAX_COMMANDS);
+        D(("[ogles2_vk] WARNING: command buffer full (%u/%u)\n",
+                           (unsigned)cmd->commandCount, (unsigned)OGLES2VK_MAX_COMMANDS));
         return NULL;
     }
 
@@ -167,8 +167,8 @@ VkResult ogles2vk_EndCommandBuffer(VkCommandBuffer commandBuffer)
     OGLES2VKCommandBuffer *cmd = (OGLES2VKCommandBuffer *)commandBuffer;
     cmd->recording = 0;
 
-    IExec->DebugPrintF("[ogles2_vk] Command buffer recorded: %lu commands\n",
-                       (unsigned long)cmd->commandCount);
+    D(("[ogles2_vk] Command buffer recorded: %lu commands\n",
+                       (unsigned long)cmd->commandCount));
     return VK_SUCCESS;
 }
 

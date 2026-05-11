@@ -63,8 +63,8 @@ VkResult swvk_AllocateMemory(VkDevice device,
 
     *pMemory = (VkDeviceMemory)(uintptr_t)mem;
 
-    IExec->DebugPrintF("[software_vk] Memory allocated: %lu bytes\n",
-                       (unsigned long)pAllocateInfo->allocationSize);
+    D(("[software_vk] Memory allocated: %lu bytes\n",
+                       (unsigned long)pAllocateInfo->allocationSize));
 
     return VK_SUCCESS;
 }

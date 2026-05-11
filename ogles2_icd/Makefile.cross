@@ -9,6 +9,7 @@ CFLAGS   = -mcrt=newlib -O2 -mstrict-align $(DEBUG) -Iinclude -Wall \
            -D__NOLIBBASE__ -D__NOGLOBALIFACE__
 LDFLAGS  = -mcrt=newlib -nostartfiles
 DEBUG	:=
+
 SDK		 = /usr/ppc-amigaos/SDK/include/include_h
 SPVC_DIR = external/spirv-cross
 SPVC_SRCS = spirv_cfg.cpp spirv_cross_parsed_ir.cpp spirv_cross.cpp \
@@ -96,6 +97,6 @@ $(TARGET):
 
 
 clean:
-	rm -f build/swvk_*.o build/software_vk.library
+	rm -f build/*
 
 

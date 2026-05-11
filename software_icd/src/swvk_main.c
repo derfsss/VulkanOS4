@@ -223,8 +223,8 @@ static struct Library *_lib_Init(struct Library *libBase, BPTR seglist,
         return NULL;
     }
 
-    IExec->DebugPrintF("[software_vk] Initialized v%ld.%ld\n",
-                       (long)LIBVER, (long)LIBREV);
+    D(("[software_vk] Initialized v%ld.%ld\n",
+                       (long)LIBVER, (long)LIBREV));
 
     return (struct Library *)base;
 }
@@ -1241,8 +1241,8 @@ static VkResult APICALL _icd_NegotiateLoaderICDInterfaceVersion(
     if (*pSupportedVersion > 3)
         *pSupportedVersion = 3;
 
-    IExec->DebugPrintF("[software_vk] Negotiated ICD interface version %lu\n",
-                       (unsigned long)*pSupportedVersion);
+    D(("[software_vk] Negotiated ICD interface version %lu\n",
+                       (unsigned long)*pSupportedVersion));
 
     return VK_SUCCESS;
 }

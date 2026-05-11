@@ -8,6 +8,7 @@ CC       = ppc-amigaos-gcc
 CFLAGS   = -mcrt=newlib -O2 -Wall \
            -D__NOLIBBASE__ -D__NOGLOBALIFACE__
 LDFLAGS  = -mcrt=newlib -nostartfiles
+DEBUG	:=
 
 SOURCES  = src/swvk_main.c src/swvk_instance.c src/swvk_device.c \
            src/swvk_memory.c src/swvk_buffer.c \
