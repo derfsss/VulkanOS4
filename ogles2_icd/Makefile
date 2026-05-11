@@ -10,6 +10,7 @@ CC       = ppc-amigaos-gcc
 CFLAGS   = -mcrt=newlib -O2 -Wall \
            -D__NOLIBBASE__ -D__NOGLOBALIFACE__
 LDFLAGS  = -mcrt=newlib -nostartfiles
+DEBUG	:=
 
 TARGET   = ../build/ogles2_vk.library
 

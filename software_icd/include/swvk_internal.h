@@ -14,6 +14,12 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_icd.h>
 
+#ifdef DEBUG
+#define D(x) IExec->DebugPrintF x
+#else
+#define D(x) do {} while (0)
+#endif
+
 /*------------------------------------------------------------------------
 ** Version info
 **----------------------------------------------------------------------*/

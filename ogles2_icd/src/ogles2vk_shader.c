@@ -54,8 +54,8 @@ VkResult ogles2vk_CreateShaderModule(VkDevice device,
     uint32_t magic = pCreateInfo->pCode[0];
     if (magic != SPV_MAGIC_LE && magic != SPV_MAGIC_BE)
     {
-        IExec->DebugPrintF("[ogles2_vk] Invalid SPIR-V magic: 0x%08lx\n",
-                           (unsigned long)magic);
+        D(("[ogles2_vk] Invalid SPIR-V magic: 0x%08lx\n",
+                           (unsigned long)magic));
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
@@ -90,10 +90,10 @@ VkResult ogles2vk_CreateShaderModule(VkDevice device,
 
     *pShaderModule = (VkShaderModule)(uintptr_t)mod;
 
-    IExec->DebugPrintF("[ogles2_vk] Shader module created (%lu words, magic=0x%02x%02x%02x%02x)\n",
+    D(("[ogles2_vk] Shader module created (%lu words, magic=0x%02x%02x%02x%02x)\n",
                        (unsigned long)wordCount,
                        ((uint8_t *)mod->codeOrig)[0], ((uint8_t *)mod->codeOrig)[1],
-                       ((uint8_t *)mod->codeOrig)[2], ((uint8_t *)mod->codeOrig)[3]);
+                       ((uint8_t *)mod->codeOrig)[2], ((uint8_t *)mod->codeOrig)[3]));
 
     return VK_SUCCESS;
 }
@@ -372,9 +372,9 @@ VkResult ogles2vk_CreateGraphicsPipelines(VkDevice device,
 
         pPipelines[i] = (VkPipeline)(uintptr_t)pipe;
 
-        IExec->DebugPrintF("[ogles2_vk] Pipeline created (vert=%s frag=%s)\n",
+        D(("[ogles2_vk] Pipeline created (vert=%s frag=%s)\n",
                            pipe->vertShader ? "yes" : "no",
-                           pipe->fragShader ? "yes" : "no");
+                           pipe->fragShader ? "yes" : "no"));
     }
 
     return VK_SUCCESS;

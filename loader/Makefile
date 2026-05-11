@@ -8,6 +8,7 @@ CC       = ppc-amigaos-gcc
 CFLAGS   = -mcrt=newlib -O2 -Wall -Iinclude -Iinclude/include_h \
            -D__NOLIBBASE__ -D__NOGLOBALIFACE__
 LDFLAGS  = -mcrt=newlib -nostartfiles
+DEBUG	:=
 
 SOURCES  = src/loader_main.c src/loader_dispatch.c src/loader_icd.c src/loader_wsi.c
 TARGET   = ../build/vulkan.library

@@ -46,7 +46,7 @@ static int swvk_OpenGraphics(void)
     GraphicsBase = IExec->OpenLibrary("graphics.library", 54);
     if (!GraphicsBase)
     {
-        IExec->DebugPrintF("[software_vk] Cannot open graphics.library\n");
+        D(("[software_vk] Cannot open graphics.library\n"));
         return 0;
     }
 
@@ -56,7 +56,7 @@ static int swvk_OpenGraphics(void)
     {
         IExec->CloseLibrary(GraphicsBase);
         GraphicsBase = NULL;
-        IExec->DebugPrintF("[software_vk] Cannot get graphics interface\n");
+        D(("[software_vk] Cannot get graphics interface\n"));
         return 0;
     }
 
@@ -313,9 +313,9 @@ VkResult swvk_CreateSwapchainKHR(
 
     *pSwapchain = (VkSwapchainKHR)(uintptr_t)sc;
 
-    IExec->DebugPrintF("[software_vk] Swapchain created: %lux%lu, %lu images\n",
+    D(("[software_vk] Swapchain created: %lux%lu, %lu images\n",
         (unsigned long)sc->width, (unsigned long)sc->height,
-        (unsigned long)sc->imageCount);
+        (unsigned long)sc->imageCount));
 
     return VK_SUCCESS;
 
@@ -362,7 +362,7 @@ void swvk_DestroySwapchainKHR(VkDevice device,
 
     IExec->FreeVec(sc);
 
-    IExec->DebugPrintF("[software_vk] Swapchain destroyed\n");
+    D(("[software_vk] Swapchain destroyed\n"));
 }
 
 VkResult swvk_GetSwapchainImagesKHR(VkDevice device,

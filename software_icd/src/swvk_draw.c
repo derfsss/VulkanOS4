@@ -932,8 +932,8 @@ static void swvk_ExecuteDraw(SWVKRenderState *rs, const SWVKCommand *cmd)
     /* Guard against integer overflow in allocation size */
     if (vertexCount > 0xFFFFFFFFU / sizeof(SWVKVertexOutput))
     {
-        IExec->DebugPrintF("[software_vk] vertexCount overflow: %lu\n",
-                           (unsigned long)vertexCount);
+        D(("[software_vk] vertexCount overflow: %lu\n",
+                           (unsigned long)vertexCount));
         return;
     }
 
@@ -964,7 +964,7 @@ static void swvk_ExecuteDraw(SWVKRenderState *rs, const SWVKCommand *cmd)
         vertState = rs->cachedVertState;
         if (!vertState)
         {
-            IExec->DebugPrintF("[software_vk] WARNING: vertState alloc failed\n");
+            D(("[software_vk] WARNING: vertState alloc failed\n"));
             IExec->FreeVec(verts);
             return;
         }
@@ -974,8 +974,8 @@ static void swvk_ExecuteDraw(SWVKRenderState *rs, const SWVKCommand *cmd)
     {
         if (swvk_RunVertexShader(rs->pipeline, firstVertex + i, &verts[i], vertState, rs) != 0)
         {
-            IExec->DebugPrintF("[software_vk] Vertex shader failed at vertex %lu\n",
-                               (unsigned long)(firstVertex + i));
+            D(("[software_vk] Vertex shader failed at vertex %lu\n",
+                               (unsigned long)(firstVertex + i)));
             IExec->FreeVec(verts);
             return;
         }
@@ -998,7 +998,7 @@ static void swvk_ExecuteDraw(SWVKRenderState *rs, const SWVKCommand *cmd)
         }
         fragState = rs->cachedFragState;
         if (!fragState)
-            IExec->DebugPrintF("[software_vk] WARNING: fragState alloc failed\n");
+            D(("[software_vk] WARNING: fragState alloc failed\n"));
     }
 
     /* Rasterise primitives using effective topology (pipeline or dynamic) */
@@ -1060,7 +1060,7 @@ static void swvk_ExecuteDrawIndexed(SWVKRenderState *rs, const SWVKCommand *cmd)
     /* Validate index buffer */
     if (!rs->indexBuffer || !rs->indexBuffer->boundMemory || !rs->indexBuffer->boundMemory->data)
     {
-        IExec->DebugPrintF("[software_vk] DrawIndexed: no index buffer bound\n");
+        D(("[software_vk] DrawIndexed: no index buffer bound\n"));
         return;
     }
 
@@ -1074,15 +1074,15 @@ static void swvk_ExecuteDrawIndexed(SWVKRenderState *rs, const SWVKCommand *cmd)
     VkDeviceSize requiredIBSize = (VkDeviceSize)(firstIndex + indexCount) * indexSize;
     if (ibuf->boundOffset + rs->indexOffset + requiredIBSize > ibuf->boundMemory->size)
     {
-        IExec->DebugPrintF("[software_vk] DrawIndexed: index buffer overflow\n");
+        D(("[software_vk] DrawIndexed: index buffer overflow\n"));
         return;
     }
 
     /* Guard against integer overflow in allocation size */
     if (indexCount > 0xFFFFFFFFU / sizeof(SWVKVertexOutput))
     {
-        IExec->DebugPrintF("[software_vk] DrawIndexed: indexCount overflow: %lu\n",
-                           (unsigned long)indexCount);
+        D(("[software_vk] DrawIndexed: indexCount overflow: %lu\n",
+           (unsigned long)indexCount));
         return;
     }
 
@@ -1111,7 +1111,7 @@ static void swvk_ExecuteDrawIndexed(SWVKRenderState *rs, const SWVKCommand *cmd)
         vertState = rs->cachedVertState;
         if (!vertState)
         {
-            IExec->DebugPrintF("[software_vk] WARNING: vertState alloc failed (indexed)\n");
+            D(("[software_vk] WARNING: vertState alloc failed (indexed)\n"));
             IExec->FreeVec(verts);
             return;
         }
@@ -1140,8 +1140,8 @@ static void swvk_ExecuteDrawIndexed(SWVKRenderState *rs, const SWVKCommand *cmd)
 
         if (swvk_RunVertexShader(rs->pipeline, vertIdx, &verts[i], vertState, rs) != 0)
         {
-            IExec->DebugPrintF("[software_vk] Vertex shader failed at indexed vertex %lu (idx=%lu)\n",
-                               (unsigned long)i, (unsigned long)vertIdx);
+            D(("[software_vk] Vertex shader failed at indexed vertex %lu (idx=%lu)\n",
+                               (unsigned long)i, (unsigned long)vertIdx));
             IExec->FreeVec(verts);
             return;
         }
@@ -1164,7 +1164,7 @@ static void swvk_ExecuteDrawIndexed(SWVKRenderState *rs, const SWVKCommand *cmd)
         }
         fragState = rs->cachedFragState;
         if (!fragState)
-            IExec->DebugPrintF("[software_vk] WARNING: fragState alloc failed (indexed)\n");
+            D(("[software_vk] WARNING: fragState alloc failed (indexed)\n"));
     }
 
     /* Rasterise primitives using effective topology (pipeline or dynamic) */
@@ -1424,7 +1424,7 @@ static void swvk_ExecuteCommandBuffer(SWVKCommandBuffer *cmdbuf)
                 }
                 else
                 {
-                    IExec->DebugPrintF("[software_vk] WARNING: CmdCopyBuffer out of bounds\n");
+                    D(("[software_vk] WARNING: CmdCopyBuffer out of bounds\n"));
                 }
             }
             break;
@@ -1628,7 +1628,7 @@ static void swvk_ExecuteCommandBuffer(SWVKCommandBuffer *cmdbuf)
                 }
                 else
                 {
-                    IExec->DebugPrintF("[software_vk] WARNING: CmdFillBuffer out of bounds\n");
+                    D(("[software_vk] WARNING: CmdFillBuffer out of bounds\n"));
                 }
             }
             break;
@@ -1649,7 +1649,7 @@ static void swvk_ExecuteCommandBuffer(SWVKCommandBuffer *cmdbuf)
                 }
                 else
                 {
-                    IExec->DebugPrintF("[software_vk] WARNING: CmdUpdateBuffer out of bounds\n");
+                    D(("[software_vk] WARNING: CmdUpdateBuffer out of bounds\n"));
                 }
             }
             break;
@@ -1755,8 +1755,8 @@ VkResult swvk_QueueSubmit(VkQueue queue,
 
             if (cmdbuf)
             {
-                IExec->DebugPrintF("[software_vk] Executing command buffer (%lu commands)\n",
-                                   (unsigned long)cmdbuf->commandCount);
+                D(("[software_vk] Executing command buffer (%lu commands)\n",
+                                   (unsigned long)cmdbuf->commandCount));
                 swvk_ExecuteCommandBuffer(cmdbuf);
             }
         }
@@ -1795,8 +1795,8 @@ VkResult swvk_QueueSubmit2(VkQueue queue,
 
             if (cmdbuf)
             {
-                IExec->DebugPrintF("[software_vk] QueueSubmit2: executing command buffer (%lu commands)\n",
-                                   (unsigned long)cmdbuf->commandCount);
+                D(("[software_vk] QueueSubmit2: executing command buffer (%lu commands)\n",
+                                   (unsigned long)cmdbuf->commandCount));
                 swvk_ExecuteCommandBuffer(cmdbuf);
             }
         }

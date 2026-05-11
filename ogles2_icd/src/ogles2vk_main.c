@@ -299,6 +299,30 @@ static void _discover_gpu(void)
     g_physDevice.properties.limits.maxVertexInputAttributes     = 16;
     g_physDevice.properties.limits.maxVertexInputBindings       = 8;
 
+    /*
+     * Allocation / alignment limits — VMA queries these during init AND on
+     * every allocation to round sizes / pick block layout. With the prior
+     * memset() they stayed 0, which made VMA's internal
+     * `min(blockSize, heapSize) % bufferImageGranularity` math divide by
+     * zero (or compute alignment 0), causing vmaCreateImage to bail out
+     * with VK_ERROR_OUT_OF_DEVICE_MEMORY before ever calling
+     * vkAllocateMemory. These conservative defaults match typical desktop
+     * GPUs and let VMA proceed.
+     */
+    g_physDevice.properties.limits.bufferImageGranularity            = 1024;
+    g_physDevice.properties.limits.nonCoherentAtomSize               = 64;
+    g_physDevice.properties.limits.minMemoryMapAlignment             = 64;
+    g_physDevice.properties.limits.minUniformBufferOffsetAlignment   = 256;
+    g_physDevice.properties.limits.minStorageBufferOffsetAlignment   = 256;
+    g_physDevice.properties.limits.minTexelBufferOffsetAlignment     = 16;
+    g_physDevice.properties.limits.optimalBufferCopyOffsetAlignment  = 4;
+    g_physDevice.properties.limits.optimalBufferCopyRowPitchAlignment = 4;
+    g_physDevice.properties.limits.maxMemoryAllocationCount          = 4096;
+    g_physDevice.properties.limits.maxSamplerAllocationCount         = 4096;
+    g_physDevice.properties.limits.maxStorageBufferRange             = 0x80000000u;  /* 2 GB */
+    g_physDevice.properties.limits.maxUniformBufferRange             = 65536;
+    g_physDevice.properties.limits.sparseAddressSpaceSize            = 0;
+
     /* Query W3D Nova capabilities where available */
     {
         uint32 maxTexW = (uint32)IW3DNova->W3DN_Query(gpuList, W3DN_Q_MAXTEXWIDTH);
