@@ -82,6 +82,6 @@ $(TARGET):
 
 
 clean:
-	rm -f build/*
+	rm -f build/swvk_*.o build/software_vk.library
 
 

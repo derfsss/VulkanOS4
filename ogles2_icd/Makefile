@@ -7,7 +7,7 @@ DOCKER_IMAGE = walkero/amigagccondocker:os4-gcc11
 DOCKER_RUN   = docker run --rm -v "$(shell pwd)/..:/work" -w /work $(DOCKER_IMAGE)
 
 CC       = ppc-amigaos-gcc
-CFLAGS   = -mcrt=newlib -O2 -Wall \
+CFLAGS   = -mcrt=newlib -O2 $(DEBUG) -Wall \
            -D__NOLIBBASE__ -D__NOGLOBALIFACE__
 LDFLAGS  = -mcrt=newlib -nostartfiles
 DEBUG	:=
@@ -61,38 +61,38 @@ $(TARGET):
 			build/spvc_spirv_parser.o \
 			build/spvc_spirv_cross_c.o && \
 		echo "--- Building gthread stubs ---" && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) \
 			-c loader/gthread_stubs.c -o build/gthread_stubs.o && \
 		echo "--- Building ICD C objects ---" && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Iogles2_icd/include \
 			-c ogles2_icd/src/ogles2vk_main.c -o build/ogles2vk_main.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Iogles2_icd/include \
 			-c ogles2_icd/src/ogles2vk_device.c -o build/ogles2vk_device.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Iogles2_icd/include \
 			-c ogles2_icd/src/ogles2vk_shader.c -o build/ogles2vk_shader.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Iogles2_icd/include \
 			-c ogles2_icd/src/ogles2vk_cmdbuf.c -o build/ogles2vk_cmdbuf.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Iogles2_icd/include \
 			-c ogles2_icd/src/ogles2vk_sync.c -o build/ogles2vk_sync.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Iogles2_icd/include -Iexternal/spirv-cross \
 			-c ogles2_icd/src/ogles2vk_exec.c -o build/ogles2vk_exec.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Iogles2_icd/include -Iexternal/spirv-cross \
 			-c ogles2_icd/src/ogles2vk_spirv2glsl.c -o build/ogles2vk_spirv2glsl.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Iogles2_icd/include \
 			-c ogles2_icd/src/ogles2vk_wsi.c -o build/ogles2vk_wsi.o && \

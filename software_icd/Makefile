@@ -5,7 +5,7 @@ DOCKER_IMAGE = walkero/amigagccondocker:os4-gcc11
 DOCKER_RUN   = docker run --rm -v "$(shell pwd)/..:/work" -w /work $(DOCKER_IMAGE)
 
 CC       = ppc-amigaos-gcc
-CFLAGS   = -mcrt=newlib -O2 -Wall \
+CFLAGS   = -mcrt=newlib -O2 $(DEBUG) -Wall \
            -D__NOLIBBASE__ -D__NOGLOBALIFACE__
 LDFLAGS  = -mcrt=newlib -nostartfiles
 DEBUG	:=
@@ -30,51 +30,51 @@ $(TARGET):
 		cp include/proto/vulkan.h $$SDK/proto/ && \
 		cp include/clib/vulkan_protos.h $$SDK/clib/ && \
 		mkdir -p build && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Isoftware_icd/include \
 			-c software_icd/src/swvk_main.c -o build/swvk_main.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Isoftware_icd/include \
 			-c software_icd/src/swvk_instance.c -o build/swvk_instance.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Isoftware_icd/include \
 			-c software_icd/src/swvk_device.c -o build/swvk_device.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Isoftware_icd/include \
 			-c software_icd/src/swvk_memory.c -o build/swvk_memory.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Isoftware_icd/include \
 			-c software_icd/src/swvk_buffer.c -o build/swvk_buffer.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Isoftware_icd/include \
 			-c software_icd/src/swvk_pipeline.c -o build/swvk_pipeline.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Isoftware_icd/include \
 			-c software_icd/src/swvk_spirv.c -o build/swvk_spirv.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Isoftware_icd/include \
 			-c software_icd/src/swvk_cmdbuf.c -o build/swvk_cmdbuf.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Isoftware_icd/include \
 			-c software_icd/src/swvk_draw.c -o build/swvk_draw.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Isoftware_icd/include \
 			-c software_icd/src/swvk_sync.c -o build/swvk_sync.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Isoftware_icd/include \
 			-c software_icd/src/swvk_wsi.c -o build/swvk_wsi.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Isoftware_icd/include \
 			-c software_icd/src/swvk_descriptor.c -o build/swvk_descriptor.o && \

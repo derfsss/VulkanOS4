@@ -5,7 +5,7 @@ DOCKER_IMAGE = walkero/amigagccondocker:os4-gcc11
 DOCKER_RUN   = docker run --rm -v "$(shell pwd)/..:/work" -w /work $(DOCKER_IMAGE)
 
 CC       = ppc-amigaos-gcc
-CFLAGS   = -mcrt=newlib -O2 -Wall -Iinclude -Iinclude/include_h \
+CFLAGS   = -mcrt=newlib -O2 $(DEBUG) -Wall -Iinclude -Iinclude/include_h \
            -D__NOLIBBASE__ -D__NOGLOBALIFACE__
 LDFLAGS  = -mcrt=newlib -nostartfiles
 DEBUG	:=
@@ -26,19 +26,19 @@ $(TARGET):
 		cp include/proto/vulkan.h $$SDK/proto/ && \
 		cp include/clib/vulkan_protos.h $$SDK/clib/ && \
 		mkdir -p build && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Iloader/include \
 			-c loader/src/loader_main.c -o build/loader_main.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Iloader/include \
 			-c loader/src/loader_dispatch.c -o build/loader_dispatch.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Iloader/include \
 			-c loader/src/loader_icd.c -o build/loader_icd.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
 			-Iloader/include \
 			-c loader/src/loader_wsi.c -o build/loader_wsi.o && \
@@ -46,7 +46,7 @@ $(TARGET):
 			-o build/vulkan.library \
 			build/loader_main.o build/loader_dispatch.o \
 			build/loader_icd.o build/loader_wsi.o && \
-		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+		ppc-amigaos-gcc -mcrt=newlib -O2 $(DEBUG) -Wall \
 			-c loader/src/vulkan_autoinit.c -o build/vulkan_autoinit.o && \
 		ppc-amigaos-ar rcs build/libvulkan_loader.a build/vulkan_autoinit.o \
 		'
