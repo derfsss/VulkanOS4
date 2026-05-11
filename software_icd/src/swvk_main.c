@@ -1205,6 +1205,19 @@ static PFN_vkVoidFunction swvk_LookupRawProcAddr(const char *pName)
     RAW(vkCmdEndRenderPass, swvk_CmdEndRenderPass);
     RAW(vkCmdNextSubpass, swvk_CmdNextSubpass);
 
+    /* WSI -- surface queries */
+    RAW(vkGetPhysicalDeviceSurfaceSupportKHR, swvk_GetPhysicalDeviceSurfaceSupportKHR);
+    RAW(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, swvk_GetPhysicalDeviceSurfaceCapabilitiesKHR);
+    RAW(vkGetPhysicalDeviceSurfaceFormatsKHR, swvk_GetPhysicalDeviceSurfaceFormatsKHR);
+    RAW(vkGetPhysicalDeviceSurfacePresentModesKHR, swvk_GetPhysicalDeviceSurfacePresentModesKHR);
+
+    /* WSI -- swapchain */
+    RAW(vkCreateSwapchainKHR, swvk_CreateSwapchainKHR);
+    RAW(vkDestroySwapchainKHR, swvk_DestroySwapchainKHR);
+    RAW(vkGetSwapchainImagesKHR, swvk_GetSwapchainImagesKHR);
+    RAW(vkAcquireNextImageKHR, swvk_AcquireNextImageKHR);
+    RAW(vkQueuePresentKHR, swvk_QueuePresentKHR);
+
     #undef RAW
     return NULL;
 }

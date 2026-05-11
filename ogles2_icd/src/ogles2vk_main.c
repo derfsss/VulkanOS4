@@ -1674,42 +1674,280 @@ static PFN_vkVoidFunction ogles2vk_LookupProcAddr(const char *pName)
 
 static PFN_vkVoidFunction ogles2vk_LookupRawProcAddr(const char *pName)
 {
+    /* Mirror of the DISPATCH table in ogles2vk_LookupProcAddr, but pointing
+    ** at the raw (non-APICALL) underlying functions. vkGetDeviceProcAddr
+    ** must return pointers the application can call as standard PFN_vk*
+    ** with no Self in r3 -- handing back APICALL trampolines (as the old
+    ** fallback did) slides every argument by one register at call time. */
     #define RAW(vkName, fn) \
         if (strcmp(pName, #vkName) == 0) return (PFN_vkVoidFunction)(fn)
 
-    RAW(vkCreateQueryPool, ogles2vk_CreateQueryPool);
-    RAW(vkDestroyQueryPool, ogles2vk_DestroyQueryPool);
-    RAW(vkGetQueryPoolResults, ogles2vk_GetQueryPoolResults);
-    RAW(vkResetQueryPool, ogles2vk_ResetQueryPool);
-    RAW(vkCmdWriteTimestamp, ogles2vk_CmdWriteTimestamp);
-    RAW(vkCmdWriteTimestamp2, ogles2vk_CmdWriteTimestamp2);
-    RAW(vkCmdBeginQuery, ogles2vk_CmdBeginQuery);
-    RAW(vkCmdEndQuery, ogles2vk_CmdEndQuery);
-    RAW(vkCmdResetQueryPool, ogles2vk_CmdResetQueryPool);
-    RAW(vkCmdCopyQueryPoolResults, ogles2vk_CmdCopyQueryPoolResults);
+    /* Globals */
+    RAW(vkCreateInstance, ogles2vk_CreateInstance);
+    RAW(vkDestroyInstance, ogles2vk_DestroyInstance);
+    RAW(vkEnumerateInstanceVersion, ogles2vk_EnumerateInstanceVersion);
+    RAW(vkEnumerateInstanceExtensionProperties, ogles2vk_EnumerateInstanceExtensionProperties);
+
+    /* Physical device enumeration */
+    RAW(vkEnumeratePhysicalDevices, ogles2vk_EnumeratePhysicalDevices);
+
+    /* Physical device queries */
+    RAW(vkGetPhysicalDeviceProperties, ogles2vk_GetPhysicalDeviceProperties);
+    RAW(vkGetPhysicalDeviceFeatures, ogles2vk_GetPhysicalDeviceFeatures);
+    RAW(vkGetPhysicalDeviceQueueFamilyProperties, ogles2vk_GetPhysicalDeviceQueueFamilyProperties);
+    RAW(vkGetPhysicalDeviceMemoryProperties, ogles2vk_GetPhysicalDeviceMemoryProperties);
+    RAW(vkGetPhysicalDeviceFormatProperties, ogles2vk_GetPhysicalDeviceFormatProperties);
+
+    /* Device extension enumeration */
+    RAW(vkEnumerateDeviceExtensionProperties, ogles2vk_EnumerateDeviceExtensionProperties);
+
+    /* Device */
+    RAW(vkCreateDevice, ogles2vk_CreateDevice);
+    RAW(vkDestroyDevice, ogles2vk_DestroyDevice);
+    RAW(vkGetDeviceQueue, ogles2vk_GetDeviceQueue);
+    RAW(vkDeviceWaitIdle, ogles2vk_DeviceWaitIdle);
+    RAW(vkQueueWaitIdle, ogles2vk_QueueWaitIdle);
+
+    /* Memory */
+    RAW(vkAllocateMemory, ogles2vk_AllocateMemory);
+    RAW(vkFreeMemory, ogles2vk_FreeMemory);
+    RAW(vkMapMemory, ogles2vk_MapMemory);
+    RAW(vkUnmapMemory, ogles2vk_UnmapMemory);
+
+    /* Buffer */
+    RAW(vkCreateBuffer, ogles2vk_CreateBuffer);
+    RAW(vkDestroyBuffer, ogles2vk_DestroyBuffer);
+    RAW(vkGetBufferMemoryRequirements, ogles2vk_GetBufferMemoryRequirements);
+    RAW(vkBindBufferMemory, ogles2vk_BindBufferMemory);
+
+    /* Image */
+    RAW(vkCreateImage, ogles2vk_CreateImage);
+    RAW(vkDestroyImage, ogles2vk_DestroyImage);
+    RAW(vkGetImageMemoryRequirements, ogles2vk_GetImageMemoryRequirements);
+    RAW(vkBindImageMemory, ogles2vk_BindImageMemory);
+    RAW(vkCreateImageView, ogles2vk_CreateImageView);
+    RAW(vkDestroyImageView, ogles2vk_DestroyImageView);
+
+    /* Sampler */
+    RAW(vkCreateSampler, ogles2vk_CreateSampler);
+    RAW(vkDestroySampler, ogles2vk_DestroySampler);
+
+    /* Descriptor sets */
+    RAW(vkCreateDescriptorSetLayout, ogles2vk_CreateDescriptorSetLayout);
+    RAW(vkDestroyDescriptorSetLayout, ogles2vk_DestroyDescriptorSetLayout);
+    RAW(vkCreateDescriptorPool, ogles2vk_CreateDescriptorPool);
+    RAW(vkDestroyDescriptorPool, ogles2vk_DestroyDescriptorPool);
+    RAW(vkAllocateDescriptorSets, ogles2vk_AllocateDescriptorSets);
+    RAW(vkFreeDescriptorSets, ogles2vk_FreeDescriptorSets);
+    RAW(vkResetDescriptorPool, ogles2vk_ResetDescriptorPool);
+    RAW(vkUpdateDescriptorSets, ogles2vk_UpdateDescriptorSets);
+
+    /* Shader module */
+    RAW(vkCreateShaderModule, ogles2vk_CreateShaderModule);
+    RAW(vkDestroyShaderModule, ogles2vk_DestroyShaderModule);
+
+    /* Pipeline layout */
+    RAW(vkCreatePipelineLayout, ogles2vk_CreatePipelineLayout);
+    RAW(vkDestroyPipelineLayout, ogles2vk_DestroyPipelineLayout);
+
+    /* Pipeline cache */
+    RAW(vkCreatePipelineCache, ogles2vk_CreatePipelineCache);
+    RAW(vkDestroyPipelineCache, ogles2vk_DestroyPipelineCache);
+
+    /* Pipeline */
+    RAW(vkCreateGraphicsPipelines, ogles2vk_CreateGraphicsPipelines);
+    RAW(vkDestroyPipeline, ogles2vk_DestroyPipeline);
+
+    /* Command pool/buffer */
+    RAW(vkCreateCommandPool, ogles2vk_CreateCommandPool);
+    RAW(vkDestroyCommandPool, ogles2vk_DestroyCommandPool);
+    RAW(vkAllocateCommandBuffers, ogles2vk_AllocateCommandBuffers);
+    RAW(vkFreeCommandBuffers, ogles2vk_FreeCommandBuffers);
+    RAW(vkBeginCommandBuffer, ogles2vk_BeginCommandBuffer);
+    RAW(vkEndCommandBuffer, ogles2vk_EndCommandBuffer);
+    RAW(vkResetCommandBuffer, ogles2vk_ResetCommandBuffer);
+    RAW(vkResetCommandPool, ogles2vk_ResetCommandPool);
+    RAW(vkTrimCommandPool, ogles2vk_TrimCommandPool);
+
+    /* Command recording */
+    RAW(vkCmdBindPipeline, ogles2vk_CmdBindPipeline);
+    RAW(vkCmdSetViewport, ogles2vk_CmdSetViewport);
+    RAW(vkCmdSetScissor, ogles2vk_CmdSetScissor);
+    RAW(vkCmdDraw, ogles2vk_CmdDraw);
+    RAW(vkCmdDrawIndexed, ogles2vk_CmdDrawIndexed);
+    RAW(vkCmdBeginRendering, ogles2vk_CmdBeginRendering);
+    RAW(vkCmdEndRendering, ogles2vk_CmdEndRendering);
+    RAW(vkCmdPushConstants, ogles2vk_CmdPushConstants);
+    RAW(vkCmdBindVertexBuffers, ogles2vk_CmdBindVertexBuffers);
+    RAW(vkCmdBindIndexBuffer, ogles2vk_CmdBindIndexBuffer);
+    RAW(vkCmdBindDescriptorSets, ogles2vk_CmdBindDescriptorSets);
+    RAW(vkCmdBeginRenderPass, ogles2vk_CmdBeginRenderPass);
+    RAW(vkCmdEndRenderPass, ogles2vk_CmdEndRenderPass);
+    RAW(vkCmdNextSubpass, ogles2vk_CmdNextSubpass);
+    RAW(vkCmdPipelineBarrier, ogles2vk_CmdPipelineBarrier);
+    RAW(vkCmdPipelineBarrier2, ogles2vk_CmdPipelineBarrier2);
+
+    /* Dynamic state */
+    RAW(vkCmdSetCullMode, ogles2vk_CmdSetCullMode);
+    RAW(vkCmdSetFrontFace, ogles2vk_CmdSetFrontFace);
+    RAW(vkCmdSetPrimitiveTopology, ogles2vk_CmdSetPrimitiveTopology);
+    RAW(vkCmdSetViewportWithCount, ogles2vk_CmdSetViewportWithCount);
+    RAW(vkCmdSetScissorWithCount, ogles2vk_CmdSetScissorWithCount);
+    RAW(vkCmdBindVertexBuffers2, ogles2vk_CmdBindVertexBuffers2);
+    RAW(vkCmdSetDepthTestEnable, ogles2vk_CmdSetDepthTestEnable);
+    RAW(vkCmdSetDepthWriteEnable, ogles2vk_CmdSetDepthWriteEnable);
+    RAW(vkCmdSetDepthCompareOp, ogles2vk_CmdSetDepthCompareOp);
+    RAW(vkCmdSetDepthBoundsTestEnable, ogles2vk_CmdSetDepthBoundsTestEnable);
+    RAW(vkCmdSetStencilTestEnable, ogles2vk_CmdSetStencilTestEnable);
+    RAW(vkCmdSetStencilOp, ogles2vk_CmdSetStencilOp);
+    RAW(vkCmdSetRasterizerDiscardEnable, ogles2vk_CmdSetRasterizerDiscardEnable);
+    RAW(vkCmdSetDepthBiasEnable, ogles2vk_CmdSetDepthBiasEnable);
+    RAW(vkCmdSetPrimitiveRestartEnable, ogles2vk_CmdSetPrimitiveRestartEnable);
+
+    /* Transfer commands */
+    RAW(vkCmdCopyBuffer, ogles2vk_CmdCopyBuffer);
+    RAW(vkCmdCopyBufferToImage, ogles2vk_CmdCopyBufferToImage);
+    RAW(vkCmdCopyImageToBuffer, ogles2vk_CmdCopyImageToBuffer);
+    RAW(vkCmdCopyImage, ogles2vk_CmdCopyImage);
+    RAW(vkCmdFillBuffer, ogles2vk_CmdFillBuffer);
+    RAW(vkCmdUpdateBuffer, ogles2vk_CmdUpdateBuffer);
+
+    /* Synchronisation */
+    RAW(vkCreateFence, ogles2vk_CreateFence);
+    RAW(vkDestroyFence, ogles2vk_DestroyFence);
+    RAW(vkWaitForFences, ogles2vk_WaitForFences);
+    RAW(vkResetFences, ogles2vk_ResetFences);
+    RAW(vkGetFenceStatus, ogles2vk_GetFenceStatus);
+    RAW(vkCreateSemaphore, ogles2vk_CreateSemaphore);
+    RAW(vkDestroySemaphore, ogles2vk_DestroySemaphore);
+    RAW(vkQueueSubmit, ogles2vk_QueueSubmit);
+    RAW(vkQueueSubmit2, ogles2vk_QueueSubmit2);
+
+    /* Stubs */
+    RAW(vkFlushMappedMemoryRanges, ogles2vk_FlushMappedMemoryRanges);
+    RAW(vkInvalidateMappedMemoryRanges, ogles2vk_InvalidateMappedMemoryRanges);
+
+    /* Vulkan 1.1/1.2/1.3 wrappers */
+    RAW(vkGetPhysicalDeviceProperties2, ogles2vk_GetPhysicalDeviceProperties2);
+    RAW(vkGetPhysicalDeviceFeatures2, ogles2vk_GetPhysicalDeviceFeatures2);
+    RAW(vkGetPhysicalDeviceQueueFamilyProperties2, ogles2vk_GetPhysicalDeviceQueueFamilyProperties2);
+    RAW(vkGetPhysicalDeviceMemoryProperties2, ogles2vk_GetPhysicalDeviceMemoryProperties2);
+    RAW(vkGetPhysicalDeviceFormatProperties2, ogles2vk_GetPhysicalDeviceFormatProperties2);
+    RAW(vkGetBufferMemoryRequirements2, ogles2vk_GetBufferMemoryRequirements2);
+    RAW(vkGetImageMemoryRequirements2, ogles2vk_GetImageMemoryRequirements2);
+    RAW(vkBindBufferMemory2, ogles2vk_BindBufferMemory2);
+    RAW(vkBindImageMemory2, ogles2vk_BindImageMemory2);
+    RAW(vkGetPhysicalDeviceImageFormatProperties, ogles2vk_GetPhysicalDeviceImageFormatProperties);
+
+    /* WSI */
+    RAW(vkGetPhysicalDeviceSurfaceSupportKHR, ogles2vk_GetPhysicalDeviceSurfaceSupportKHR);
+    RAW(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, ogles2vk_GetPhysicalDeviceSurfaceCapabilitiesKHR);
+    RAW(vkGetPhysicalDeviceSurfaceFormatsKHR, ogles2vk_GetPhysicalDeviceSurfaceFormatsKHR);
+    RAW(vkGetPhysicalDeviceSurfacePresentModesKHR, ogles2vk_GetPhysicalDeviceSurfacePresentModesKHR);
+    RAW(vkCreateSwapchainKHR, ogles2vk_CreateSwapchainKHR);
+    RAW(vkDestroySwapchainKHR, ogles2vk_DestroySwapchainKHR);
+    RAW(vkGetSwapchainImagesKHR, ogles2vk_GetSwapchainImagesKHR);
+    RAW(vkAcquireNextImageKHR, ogles2vk_AcquireNextImageKHR);
+    RAW(vkQueuePresentKHR, ogles2vk_QueuePresentKHR);
+
+    /* 100% API coverage */
+    RAW(vkGetDeviceProcAddr, ogles2vk_GetDeviceProcAddr);
+    RAW(vkGetDeviceMemoryCommitment, ogles2vk_GetDeviceMemoryCommitment);
+    RAW(vkGetImageSubresourceLayout, ogles2vk_GetImageSubresourceLayout);
+    RAW(vkGetRenderAreaGranularity, ogles2vk_GetRenderAreaGranularity);
+    RAW(vkGetDeviceQueue2, ogles2vk_GetDeviceQueue2);
+    RAW(vkGetDescriptorSetLayoutSupport, ogles2vk_GetDescriptorSetLayoutSupport);
+    RAW(vkGetPhysicalDeviceToolProperties, ogles2vk_GetPhysicalDeviceToolProperties);
+    RAW(vkGetPhysicalDeviceImageFormatProperties2, ogles2vk_GetPhysicalDeviceImageFormatProperties2);
+    RAW(vkGetPhysicalDeviceExternalBufferProperties, ogles2vk_GetPhysicalDeviceExternalBufferProperties);
+    RAW(vkGetPhysicalDeviceExternalFenceProperties, ogles2vk_GetPhysicalDeviceExternalFenceProperties);
+    RAW(vkGetPhysicalDeviceExternalSemaphoreProperties, ogles2vk_GetPhysicalDeviceExternalSemaphoreProperties);
+    RAW(vkEnumeratePhysicalDeviceGroups, ogles2vk_EnumeratePhysicalDeviceGroups);
+    RAW(vkCreateComputePipelines, ogles2vk_CreateComputePipelines);
+    RAW(vkCreateBufferView, ogles2vk_CreateBufferView);
+    RAW(vkDestroyBufferView, ogles2vk_DestroyBufferView);
+    RAW(vkCreateSamplerYcbcrConversion, ogles2vk_CreateSamplerYcbcrConversion);
+    RAW(vkDestroySamplerYcbcrConversion, ogles2vk_DestroySamplerYcbcrConversion);
+    RAW(vkCreateDescriptorUpdateTemplate, ogles2vk_CreateDescriptorUpdateTemplate);
+    RAW(vkDestroyDescriptorUpdateTemplate, ogles2vk_DestroyDescriptorUpdateTemplate);
+    RAW(vkUpdateDescriptorSetWithTemplate, ogles2vk_UpdateDescriptorSetWithTemplate);
+    RAW(vkCreatePrivateDataSlot, ogles2vk_CreatePrivateDataSlot);
+    RAW(vkDestroyPrivateDataSlot, ogles2vk_DestroyPrivateDataSlot);
+    RAW(vkSetPrivateData, ogles2vk_SetPrivateData);
+    RAW(vkGetPrivateData, ogles2vk_GetPrivateData);
+    RAW(vkGetBufferDeviceAddress, ogles2vk_GetBufferDeviceAddress);
+    RAW(vkGetBufferOpaqueCaptureAddress, ogles2vk_GetBufferOpaqueCaptureAddress);
+    RAW(vkGetDeviceMemoryOpaqueCaptureAddress, ogles2vk_GetDeviceMemoryOpaqueCaptureAddress);
+    RAW(vkGetSemaphoreCounterValue, ogles2vk_GetSemaphoreCounterValue);
+    RAW(vkWaitSemaphores, ogles2vk_WaitSemaphores);
+    RAW(vkSignalSemaphore, ogles2vk_SignalSemaphore);
+    RAW(vkGetPipelineCacheData, ogles2vk_GetPipelineCacheData);
+    RAW(vkMergePipelineCaches, ogles2vk_MergePipelineCaches);
+    RAW(vkGetImageSparseMemoryRequirements, ogles2vk_GetImageSparseMemoryRequirements);
+    RAW(vkGetImageSparseMemoryRequirements2, ogles2vk_GetImageSparseMemoryRequirements2);
+    RAW(vkGetPhysicalDeviceSparseImageFormatProperties, ogles2vk_GetPhysicalDeviceSparseImageFormatProperties);
+    RAW(vkGetPhysicalDeviceSparseImageFormatProperties2, ogles2vk_GetPhysicalDeviceSparseImageFormatProperties2);
     RAW(vkCreateEvent, ogles2vk_CreateEvent);
     RAW(vkDestroyEvent, ogles2vk_DestroyEvent);
     RAW(vkGetEventStatus, ogles2vk_GetEventStatus);
     RAW(vkSetEvent, ogles2vk_SetEvent);
     RAW(vkResetEvent, ogles2vk_ResetEvent);
-    RAW(vkGetDeviceProcAddr, ogles2vk_GetDeviceProcAddr);
+    RAW(vkCmdSetEvent, ogles2vk_CmdSetEvent);
+    RAW(vkCmdResetEvent, ogles2vk_CmdResetEvent);
+    RAW(vkCmdWaitEvents, ogles2vk_CmdWaitEvents);
+    RAW(vkCmdSetEvent2, ogles2vk_CmdSetEvent2);
+    RAW(vkCmdResetEvent2, ogles2vk_CmdResetEvent2);
+    RAW(vkCmdWaitEvents2, ogles2vk_CmdWaitEvents2);
+    RAW(vkCreateQueryPool, ogles2vk_CreateQueryPool);
+    RAW(vkDestroyQueryPool, ogles2vk_DestroyQueryPool);
+    RAW(vkGetQueryPoolResults, ogles2vk_GetQueryPoolResults);
+    RAW(vkResetQueryPool, ogles2vk_ResetQueryPool);
+    RAW(vkCmdBeginQuery, ogles2vk_CmdBeginQuery);
+    RAW(vkCmdEndQuery, ogles2vk_CmdEndQuery);
+    RAW(vkCmdResetQueryPool, ogles2vk_CmdResetQueryPool);
+    RAW(vkCmdWriteTimestamp, ogles2vk_CmdWriteTimestamp);
+    RAW(vkCmdWriteTimestamp2, ogles2vk_CmdWriteTimestamp2);
+    RAW(vkCmdCopyQueryPoolResults, ogles2vk_CmdCopyQueryPoolResults);
     RAW(vkQueueBindSparse, ogles2vk_QueueBindSparse);
-    RAW(vkSignalSemaphore, ogles2vk_SignalSemaphore);
-    RAW(vkWaitSemaphores, ogles2vk_WaitSemaphores);
-    RAW(vkGetSemaphoreCounterValue, ogles2vk_GetSemaphoreCounterValue);
     RAW(vkCreateRenderPass, ogles2vk_CreateRenderPass);
     RAW(vkDestroyRenderPass, ogles2vk_DestroyRenderPass);
     RAW(vkCreateFramebuffer, ogles2vk_CreateFramebuffer);
     RAW(vkDestroyFramebuffer, ogles2vk_DestroyFramebuffer);
     RAW(vkCreateRenderPass2, ogles2vk_CreateRenderPass2);
     RAW(vkCmdBeginRenderPass2, ogles2vk_CmdBeginRenderPass2);
-    RAW(vkCmdEndRenderPass2, ogles2vk_CmdEndRenderPass2);
     RAW(vkCmdNextSubpass2, ogles2vk_CmdNextSubpass2);
+    RAW(vkCmdEndRenderPass2, ogles2vk_CmdEndRenderPass2);
+    RAW(vkCmdSetLineWidth, ogles2vk_CmdSetLineWidth);
+    RAW(vkCmdSetDepthBias, ogles2vk_CmdSetDepthBias);
+    RAW(vkCmdSetBlendConstants, ogles2vk_CmdSetBlendConstants);
+    RAW(vkCmdSetDepthBounds, ogles2vk_CmdSetDepthBounds);
+    RAW(vkCmdSetStencilCompareMask, ogles2vk_CmdSetStencilCompareMask);
+    RAW(vkCmdSetStencilWriteMask, ogles2vk_CmdSetStencilWriteMask);
+    RAW(vkCmdSetStencilReference, ogles2vk_CmdSetStencilReference);
+    RAW(vkCmdClearColorImage, ogles2vk_CmdClearColorImage);
+    RAW(vkCmdClearDepthStencilImage, ogles2vk_CmdClearDepthStencilImage);
+    RAW(vkCmdClearAttachments, ogles2vk_CmdClearAttachments);
+    RAW(vkCmdBlitImage, ogles2vk_CmdBlitImage);
+    RAW(vkCmdResolveImage, ogles2vk_CmdResolveImage);
+    RAW(vkCmdCopyBuffer2, ogles2vk_CmdCopyBuffer2);
+    RAW(vkCmdCopyImage2, ogles2vk_CmdCopyImage2);
+    RAW(vkCmdCopyBufferToImage2, ogles2vk_CmdCopyBufferToImage2);
+    RAW(vkCmdCopyImageToBuffer2, ogles2vk_CmdCopyImageToBuffer2);
+    RAW(vkCmdBlitImage2, ogles2vk_CmdBlitImage2);
+    RAW(vkCmdResolveImage2, ogles2vk_CmdResolveImage2);
+    RAW(vkCmdSetDeviceMask, ogles2vk_CmdSetDeviceMask);
+    RAW(vkCmdDispatch, ogles2vk_CmdDispatch);
+    RAW(vkCmdDispatchBase, ogles2vk_CmdDispatchBase);
+    RAW(vkCmdDispatchIndirect, ogles2vk_CmdDispatchIndirect);
+    RAW(vkCmdExecuteCommands, ogles2vk_CmdExecuteCommands);
+    RAW(vkCmdDrawIndirect, ogles2vk_CmdDrawIndirect);
+    RAW(vkCmdDrawIndexedIndirect, ogles2vk_CmdDrawIndexedIndirect);
+    RAW(vkCmdDrawIndirectCount, ogles2vk_CmdDrawIndirectCount);
+    RAW(vkCmdDrawIndexedIndirectCount, ogles2vk_CmdDrawIndexedIndirectCount);
 
     #undef RAW
 
-    /* Fall back to trampoline lookup for functions already in loader VulkanIFace */
-    return ogles2vk_LookupProcAddr(pName);
+    return NULL;
 }
 
 static PFN_vkVoidFunction APICALL _icd_GetInstanceProcAddr(
