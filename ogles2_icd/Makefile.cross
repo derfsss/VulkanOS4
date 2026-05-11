@@ -1,0 +1,101 @@
+# software_vk.library -- Software Vulkan ICD for AmigaOS 4
+# Builds as an AmigaOS shared library using -nostartfiles
+
+DOCKER_IMAGE = walkero/amigagccondocker:os4-gcc11
+DOCKER_RUN   = docker run --rm -v "$(shell pwd)/..:/work" -w /work $(DOCKER_IMAGE)
+
+CC       = ppc-amigaos-gcc
+CFLAGS   = -mcrt=newlib -O2 -mstrict-align $(DEBUG) -Iinclude -Wall \
+           -D__NOLIBBASE__ -D__NOGLOBALIFACE__
+LDFLAGS  = -mcrt=newlib -nostartfiles
+DEBUG	:=
+SDK		 = /usr/ppc-amigaos/SDK/include/include_h
+SPVC_DIR = external/spirv-cross
+SPVC_SRCS = spirv_cfg.cpp spirv_cross_parsed_ir.cpp spirv_cross.cpp \
+            spirv_glsl.cpp spirv_parser.cpp spirv_cross_c.cpp
+SPVC_CXX = ppc-amigaos-g++ -std=c++11 -O2 -mcrt=newlib \
+           -fno-exceptions -fno-rtti \
+           -DSPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS -DNDEBUG \
+           -DSPIRV_CROSS_C_API_GLSL=1
+
+SOURCES  = src/swvk_main.c src/swvk_instance.c src/swvk_device.c \
+           src/swvk_memory.c src/swvk_buffer.c \
+           src/swvk_pipeline.c src/swvk_spirv.c src/swvk_cmdbuf.c \
+           src/swvk_draw.c src/swvk_sync.c src/swvk_wsi.c \
+           src/swvk_descriptor.c
+TARGET   = ../build/software_vk.library
+
+.PHONY: all clean
+
+all: $(TARGET)
+
+$(TARGET):
+		mkdir -p build && \
+		echo "--- Patching SPIRV-Cross for AmigaOS shared library ---" && \
+		sed -i "s/static const unordered_set<string> keywords/const unordered_set<string> keywords/" \
+			$(SPVC_DIR)/spirv_glsl.cpp && \
+		echo "--- Building SPIRV-Cross static library ---" && \
+		for src in $(SPVC_SRCS); do \
+			obj=$$(echo $$src | sed "s/.cpp/.o/"); \
+			echo "  CXX $$src"; \
+			$(SPVC_CXX) -I$(SPVC_DIR) \
+				-c $(SPVC_DIR)/$$src -o build/spvc_$$obj; \
+		done && \
+		ppc-amigaos-ar rcs build/libspirv-cross.a \
+			build/spvc_spirv_cfg.o \
+			build/spvc_spirv_cross_parsed_ir.o \
+			build/spvc_spirv_cross.o \
+			build/spvc_spirv_glsl.o \
+			build/spvc_spirv_parser.o \
+			build/spvc_spirv_cross_c.o && \
+		echo "--- Building gthread stubs ---" && \
+		ppc-amigaos-gcc -mcrt=newlib -O2 \
+			-c ../loader/gthread_stubs.c -o build/gthread_stubs.o && \
+		echo "--- Building ICD C objects ---" && \
+		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
+			-Iinclude \
+			-c src/ogles2vk_main.c -o build/ogles2vk_main.o && \
+		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
+			-Iinclude \
+			-c src/ogles2vk_device.c -o build/ogles2vk_device.o && \
+		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
+			-Iinclude \
+			-c src/ogles2vk_shader.c -o build/ogles2vk_shader.o && \
+		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
+			-Iinclude \
+			-c src/ogles2vk_cmdbuf.c -o build/ogles2vk_cmdbuf.o && \
+		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
+			-Iinclude \
+			-c src/ogles2vk_sync.c -o build/ogles2vk_sync.o && \
+		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
+			-Iinclude -Iexternal/spirv-cross \
+			-c src/ogles2vk_exec.c -o build/ogles2vk_exec.o && \
+		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
+			-Iinclude -Iexternal/spirv-cross \
+			-c src/ogles2vk_spirv2glsl.c -o build/ogles2vk_spirv2glsl.o && \
+		ppc-amigaos-gcc -mcrt=newlib -O2 -Wall \
+			-D__NOLIBBASE__ -D__NOGLOBALIFACE__ \
+			-Iinclude \
+			-c src/ogles2vk_wsi.c -o build/ogles2vk_wsi.o && \
+		echo "--- Linking ogles2_vk.library (g++ for C++ runtime) ---" && \
+		ppc-amigaos-g++ -mcrt=newlib -nostartfiles \
+			-o build/ogles2_vk.library \
+			build/ogles2vk_main.o build/ogles2vk_device.o build/ogles2vk_shader.o \
+			build/ogles2vk_cmdbuf.o build/ogles2vk_sync.o build/ogles2vk_exec.o \
+			build/ogles2vk_spirv2glsl.o build/ogles2vk_wsi.o \
+			build/libspirv-cross.a build/gthread_stubs.o \
+			-latomic \
+
+
+
+clean:
+	rm -f build/swvk_*.o build/software_vk.library
+
+

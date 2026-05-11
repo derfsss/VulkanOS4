@@ -444,7 +444,8 @@ int LoaderDiscoverICDs(void)
         }
     }
 
-    IExec->DebugPrintF("[vulkan.library] Found %d ICD(s)\n", found);
+    /* RawDoFmt-style: use %ld instead of %d for ints. */
+    IExec->DebugPrintF("[vulkan.library] Found %ld ICD(s)\n", (long)found);
     for (uint32_t i = 0; i < g_loaderState.icdCount; i++)
     {
         IExec->DebugPrintF("[vulkan.library] ICD %lu: %s (priority %ld)\n",
