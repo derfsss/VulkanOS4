@@ -1678,7 +1678,13 @@ static PFN_vkVoidFunction ogles2vk_LookupRawProcAddr(const char *pName)
     ** at the raw (non-APICALL) underlying functions. vkGetDeviceProcAddr
     ** must return pointers the application can call as standard PFN_vk*
     ** with no Self in r3 -- handing back APICALL trampolines (as the old
-    ** fallback did) slides every argument by one register at call time. */
+    ** fallback did) slides every argument by one register at call time.
+    **
+    ** Bug diagnosed by afxgroup (Andrea Palmate', derfsss/VulkanOS4#1).
+    ** His original fix replaced the trampoline fallback with `return NULL`,
+    ** which was ABI-correct but regressed WSI and ~165 other entry points
+    ** that lived only in DISPATCH. This expanded table covers every
+    ** function in DISPATCH so the fallback can safely return NULL. */
     #define RAW(vkName, fn) \
         if (strcmp(pName, #vkName) == 0) return (PFN_vkVoidFunction)(fn)
 

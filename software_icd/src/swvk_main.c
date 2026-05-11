@@ -1205,6 +1205,11 @@ static PFN_vkVoidFunction swvk_LookupRawProcAddr(const char *pName)
     RAW(vkCmdEndRenderPass, swvk_CmdEndRenderPass);
     RAW(vkCmdNextSubpass, swvk_CmdNextSubpass);
 
+    /* WSI entries -- added alongside the matching ogles2_icd fix for the
+    ** vkGetDeviceProcAddr ABI bug diagnosed by afxgroup
+    ** (derfsss/VulkanOS4#1). Without these, apps resolving WSI by raw
+    ** PFN_vk* pointer would get NULL. */
+
     /* WSI -- surface queries */
     RAW(vkGetPhysicalDeviceSurfaceSupportKHR, swvk_GetPhysicalDeviceSurfaceSupportKHR);
     RAW(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, swvk_GetPhysicalDeviceSurfaceCapabilitiesKHR);
