@@ -284,7 +284,13 @@ int ogles2vk_InitOGLES2Context(OGLES2VKDevice *dev, void *window)
 {
     if (!dev || !IOGLES2 || !window)
     {
-        IExec->DebugPrintF("[ogles2_vk] InitOGLES2: missing dev/IOGLES2/window\n");
+        /* Pinpoint which dependency is missing — the previous catch-all
+        ** message hid whether IOGLES2 failed to load or whether the surface
+        ** never received a window handle. */
+        D(("[ogles2_vk] InitOGLES2 missing: dev=0x%08lx IOGLES2=0x%08lx window=0x%08lx\n",
+                           (unsigned long)(uintptr_t)dev,
+                           (unsigned long)(uintptr_t)IOGLES2,
+                           (unsigned long)(uintptr_t)window));
         return 0;
     }
 
@@ -303,8 +309,8 @@ int ogles2vk_InitOGLES2Context(OGLES2VKDevice *dev, void *window)
     void *ctx = IOGLES2->aglCreateContext2((uint32 *)&errCode, ctxTags);
     if (!ctx)
     {
-        IExec->DebugPrintF("[ogles2_vk] aglCreateContext2 failed (err=%lu)\n",
-                           (unsigned long)errCode);
+        D(("[ogles2_vk] aglCreateContext2 failed (err=%lu)\n",
+                           (unsigned long)errCode));
         return 0;
     }
 
@@ -312,9 +318,11 @@ int ogles2vk_InitOGLES2Context(OGLES2VKDevice *dev, void *window)
     dev->glContext = ctx;
 
     /* Query renderer name */
+#ifdef DEBUG    
     const char *renderer = IOGLES2->glGetString(0x1F01); /* GL_RENDERER */
-    IExec->DebugPrintF("[ogles2_vk] OGLES2 context created: %s\n",
-                       renderer ? renderer : "unknown");
+    D(("[ogles2_vk] OGLES2 context created: %s\n",
+                       renderer ? renderer : "unknown"));
+#endif
 
     /* Set initial GL state */
     IOGLES2->glDisable(GL_DEPTH_TEST);
@@ -335,7 +343,7 @@ void ogles2vk_ShutdownOGLES2Context(OGLES2VKDevice *dev)
     IOGLES2->aglDestroyContext(dev->glContext);
     dev->glContext = NULL;
 
-    IExec->DebugPrintF("[ogles2_vk] OGLES2 context destroyed\n");
+    D(("[ogles2_vk] OGLES2 context destroyed\n"));
 }
 
 /****************************************************************************/
@@ -368,7 +376,7 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
 
     if (!pipe->vertShader || !pipe->fragShader)
     {
-        IExec->DebugPrintF("[ogles2_vk] Pipeline missing vert or frag shader\n");
+        D(("[ogles2_vk] Pipeline missing vert or frag shader\n"));
         return 0;
     }
 
@@ -385,7 +393,7 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
                 pipe->vertShader->wordCount, pipe->vertShader->codeSize,
                 1, vr) && vr->glsl)
         {
-            IExec->DebugPrintF("[ogles2_vk] SPIRV-Cross vert GLSL:\n%s\n", vr->glsl);
+            D(("[ogles2_vk] SPIRV-Cross vert GLSL:\n%s\n", vr->glsl));
             const char *src = vr->glsl;
             IOGLES2->glShaderSource(vs, 1, &src, NULL);
             IOGLES2->glCompileShader(vs);
@@ -395,7 +403,7 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
             {
                 char log[512] = {0};
                 IOGLES2->glGetShaderInfoLog(vs, sizeof(log)-1, NULL, log);
-                IExec->DebugPrintF("[ogles2_vk] GLSL vert compile error: %s\n", log);
+                D(("[ogles2_vk] GLSL vert compile error: %s\n", log));
             }
         }
 
@@ -403,14 +411,14 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
         {
             char log[512] = {0};
             IOGLES2->glGetShaderInfoLog(vs, sizeof(log)-1, NULL, log);
-            IExec->DebugPrintF("[ogles2_vk] Vert shader FAILED: %s\n", log);
+            D(("[ogles2_vk] Vert shader FAILED: %s\n", log));
             IOGLES2->glDeleteShader(vs);
             return 0;
         }
 
         pipe->vertShader->glShader = vs;
-        IExec->DebugPrintF("[ogles2_vk] Vertex shader compiled (GL %lu)\n",
-                           (unsigned long)vs);
+        D(("[ogles2_vk] Vertex shader compiled (GL %lu)\n",
+                           (unsigned long)vs));
     }
 
     /* Compile fragment shader via SPIRV-Cross transpiler (if not already done) */
@@ -426,7 +434,7 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
                 pipe->fragShader->wordCount, pipe->fragShader->codeSize,
                 0, fr) && fr->glsl)
         {
-            IExec->DebugPrintF("[ogles2_vk] SPIRV-Cross frag GLSL:\n%s\n", fr->glsl);
+            D(("[ogles2_vk] SPIRV-Cross frag GLSL:\n%s\n", fr->glsl));
             const char *src = fr->glsl;
             IOGLES2->glShaderSource(fs, 1, &src, NULL);
             IOGLES2->glCompileShader(fs);
@@ -436,7 +444,7 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
             {
                 char log[512] = {0};
                 IOGLES2->glGetShaderInfoLog(fs, sizeof(log)-1, NULL, log);
-                IExec->DebugPrintF("[ogles2_vk] GLSL frag compile error: %s\n", log);
+                D(("[ogles2_vk] GLSL frag compile error: %s\n", log));
             }
         }
 
@@ -444,14 +452,14 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
         {
             char log[512] = {0};
             IOGLES2->glGetShaderInfoLog(fs, sizeof(log)-1, NULL, log);
-            IExec->DebugPrintF("[ogles2_vk] Frag shader FAILED: %s\n", log);
+            D(("[ogles2_vk] Frag shader FAILED: %s\n", log));
             IOGLES2->glDeleteShader(fs);
             return 0;
         }
 
         pipe->fragShader->glShader = fs;
-        IExec->DebugPrintF("[ogles2_vk] Fragment shader compiled (GL %lu)\n",
-                           (unsigned long)fs);
+        D(("[ogles2_vk] Fragment shader compiled (GL %lu)\n",
+                           (unsigned long)fs));
     }
 
     /* Link program */
@@ -469,14 +477,14 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
     {
         char log[512] = {0};
         IOGLES2->glGetProgramInfoLog(prog, sizeof(log)-1, NULL, log);
-        IExec->DebugPrintF("[ogles2_vk] Program link error: %s\n", log);
+        D(("[ogles2_vk] Program link error: %s\n", log));
         IOGLES2->glDeleteProgram(prog);
         return 0;
     }
 
     pipe->glProgram = prog;
-    IExec->DebugPrintF("[ogles2_vk] Shader program linked (GL %lu)\n",
-                       (unsigned long)prog);
+    D(("[ogles2_vk] Shader program linked (GL %lu)\n",
+                       (unsigned long)prog));
 
     /* Use cached transpile results from shader modules (survive across pipelines) */
     OGLES2VKTranspileResult *vertResult = &pipe->vertShader->transpile;
@@ -507,10 +515,10 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
             }
             pipe->pcArraySize = pcResult->pcArraySize;
 
-            IExec->DebugPrintF("[ogles2_vk] Push constant array '%s': loc=%ld size=%lu vec4s\n",
+            D(("[ogles2_vk] Push constant array '%s': loc=%ld size=%lu vec4s\n",
                                pcResult->pcArrayName,
                                (long)pipe->pcArrayLoc,
-                               (unsigned long)pipe->pcArraySize);
+                               (unsigned long)pipe->pcArraySize));
         }
     }
 
@@ -528,11 +536,11 @@ static int ogles2vk_EnsureShadersCompiled(OGLES2VKPipeline *pipe)
                 uint32_t idx = pipe->samplerCount++;
                 pipe->samplerLocs[idx] = IOGLES2->glGetUniformLocation(prog, sr->samplers[i].name);
 
-                IExec->DebugPrintF("[ogles2_vk] Sampler '%s' (set=%u bind=%u): loc=%ld\n",
+                D(("[ogles2_vk] Sampler '%s' (set=%u bind=%u): loc=%ld\n",
                                    sr->samplers[i].name,
                                    (unsigned)sr->samplers[i].set,
                                    (unsigned)sr->samplers[i].binding,
-                                   (long)pipe->samplerLocs[idx]);
+                                   (long)pipe->samplerLocs[idx]));
             }
         }
     }
@@ -555,8 +563,8 @@ static uint32_t ogles2vk_MapTopology(VkPrimitiveTopology topology)
     case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP: return GL_TRIANGLE_STRIP;
     case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:   return GL_TRIANGLE_FAN;
     default:
-        IExec->DebugPrintF("[ogles2_vk] Unsupported topology %u, defaulting to TRIANGLES\n",
-                           (unsigned)topology);
+        D(("[ogles2_vk] Unsupported topology %u, defaulting to TRIANGLES\n",
+                           (unsigned)topology));
         return GL_TRIANGLES;
     }
 }
@@ -565,10 +573,13 @@ static uint32_t ogles2vk_MapTopology(VkPrimitiveTopology topology)
 /* VkFormat -> GL vertex attribute mapping                                  */
 /****************************************************************************/
 
-static int ogles2vk_FormatToAttrib(VkFormat format, int32 *outSize, uint32_t *outType)
+static int ogles2vk_FormatToAttrib(VkFormat format, int32 *outSize, uint32_t *outType, uint8_t *outNormalized)
 {
+    *outNormalized = GL_FALSE;
     switch (format)
     {
+    /* 32-bit float (only float formats present in the project's reduced
+    ** vulkan_core.h alongside R8G8B8A8_UNORM). */
     case VK_FORMAT_R32_SFLOAT:
         *outSize = 1; *outType = GL_FLOAT; return 1;
     case VK_FORMAT_R32G32_SFLOAT:
@@ -577,9 +588,16 @@ static int ogles2vk_FormatToAttrib(VkFormat format, int32 *outSize, uint32_t *ou
         *outSize = 3; *outType = GL_FLOAT; return 1;
     case VK_FORMAT_R32G32B32A32_SFLOAT:
         *outSize = 4; *outType = GL_FLOAT; return 1;
+
+    /* 8-bit unsigned normalised RGBA — ImGui packs vertex colour as 4 bytes
+    ** in this format (format value 37). Without this case the driver
+    ** rejects every ImGui draw call. */
+    case VK_FORMAT_R8G8B8A8_UNORM:
+        *outSize = 4; *outType = GL_UNSIGNED_BYTE; *outNormalized = GL_TRUE; return 1;
+
     default:
-        IExec->DebugPrintF("[ogles2_vk] Unsupported vertex format %u\n",
-                           (unsigned)format);
+        D(("[ogles2_vk] Unsupported vertex format %lu\n",
+                           (unsigned long)format));
         return 0;
     }
 }
@@ -595,8 +613,8 @@ static int32_t ogles2vk_MapFilter(VkFilter filter)
     case VK_FILTER_NEAREST: return GL_NEAREST;
     case VK_FILTER_LINEAR:  return GL_LINEAR;
     default:
-        IExec->DebugPrintF("[ogles2_vk] Unsupported filter %u, defaulting to LINEAR\n",
-                           (unsigned)filter);
+        D(("[ogles2_vk] Unsupported filter %u, defaulting to LINEAR\n",
+                           (unsigned)filter));
         return GL_LINEAR;
     }
 }
@@ -609,8 +627,8 @@ static int32_t ogles2vk_MapAddressMode(VkSamplerAddressMode mode)
     case VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: return GL_MIRRORED_REPEAT;
     case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:   return GL_CLAMP_TO_EDGE;
     default:
-        IExec->DebugPrintF("[ogles2_vk] Unsupported address mode %u, defaulting to REPEAT\n",
-                           (unsigned)mode);
+        D(("[ogles2_vk] Unsupported address mode %u, defaulting to REPEAT\n",
+                           (unsigned)mode));
         return GL_REPEAT;
     }
 }
@@ -674,8 +692,8 @@ static uint32_t ogles2vk_MapDepthFunc(VkCompareOp op)
     case VK_COMPARE_OP_GREATER_OR_EQUAL: return 0x0206; /* GL_GEQUAL */
     case VK_COMPARE_OP_ALWAYS:           return 0x0207; /* GL_ALWAYS */
     default:
-        IExec->DebugPrintF("[ogles2_vk] Unsupported compare op %u, defaulting to LESS\n",
-                           (unsigned)op);
+        D(("[ogles2_vk] Unsupported compare op %u, defaulting to LESS\n",
+                           (unsigned)op));
         return GL_LESS;
     }
 }
@@ -782,7 +800,7 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                 }
                 else
                 {
-                    IExec->DebugPrintF("[ogles2_vk] Pipeline not ready, draw skipped\n");
+                    D(("[ogles2_vk] Pipeline not ready, draw skipped\n"));
                 }
             }
             break;
@@ -867,7 +885,7 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                 if (!boundIndexBuffer || !boundIndexBuffer->boundMemory ||
                     !boundIndexBuffer->boundMemory->data)
                 {
-                    IExec->DebugPrintF("[ogles2_vk] DrawIndexed: no index buffer bound\n");
+                    D(("[ogles2_vk] DrawIndexed: no index buffer bound\n"));
                     break;
                 }
 
@@ -885,7 +903,7 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                 /* Guard against integer overflow */
                 if (idxCount > 0x7FFFFFFFU / idxSize)
                 {
-                    IExec->DebugPrintF("[ogles2_vk] DrawIndexed: index count too large\n");
+                    D(("[ogles2_vk] DrawIndexed: index count too large\n"));
                     break;
                 }
 
@@ -893,7 +911,7 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                 if (boundIndexBuffer->boundOffset + boundIndexOffset >=
                     boundIndexBuffer->boundMemory->size)
                 {
-                    IExec->DebugPrintF("[ogles2_vk] DrawIndexed: offset past end of memory\n");
+                    D(("[ogles2_vk] DrawIndexed: offset past end of memory\n"));
                     break;
                 }
 
@@ -908,10 +926,10 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
 
                 if (ibRequired > ibAvail)
                 {
-                    IExec->DebugPrintF("[ogles2_vk] DrawIndexed: index buffer overflow "
+                    D(("[ogles2_vk] DrawIndexed: index buffer overflow "
                                        "(need %lu, have %lu)\n",
                                        (unsigned long)ibRequired,
-                                       (unsigned long)ibAvail);
+                                       (unsigned long)ibAvail));
                     break;
                 }
             }
@@ -963,8 +981,8 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
 
                         if (!img->boundMemory || !img->boundMemory->data)
                         {
-                            IExec->DebugPrintF("[ogles2_vk] Texture s%u b%u: no bound memory\n",
-                                               (unsigned)s, (unsigned)b);
+                            D(("[ogles2_vk] Texture s%u b%u: no bound memory\n",
+                                               (unsigned)s, (unsigned)b));
                             continue;
                         }
 
@@ -975,10 +993,10 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                             img->format != VK_FORMAT_B8G8R8A8_UNORM &&
                             img->format != VK_FORMAT_B8G8R8A8_SRGB)
                         {
-                            IExec->DebugPrintF("[ogles2_vk] Texture s%u b%u: "
+                            D(("[ogles2_vk] Texture s%u b%u: "
                                                "unsupported format %u, skipping\n",
                                                (unsigned)s, (unsigned)b,
-                                               (unsigned)img->format);
+                                               (unsigned)img->format));
                             continue;
                         }
 
@@ -987,12 +1005,12 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                                                    * img->height * bpp;
                         if (img->boundOffset + texDataSize > img->boundMemory->size)
                         {
-                            IExec->DebugPrintF("[ogles2_vk] Texture s%u b%u: "
+                            D(("[ogles2_vk] Texture s%u b%u: "
                                                "data overflow (%lu + %lu > %lu)\n",
                                                (unsigned)s, (unsigned)b,
                                                (unsigned long)img->boundOffset,
                                                (unsigned long)texDataSize,
-                                               (unsigned long)img->boundMemory->size);
+                                               (unsigned long)img->boundMemory->size));
                             continue;
                         }
 
@@ -1002,10 +1020,10 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                         /* Prevent GL texture leak: check capacity before creating */
                         if (glTextureCount >= OGLES2VK_MAX_BOUND_TEXTURES)
                         {
-                            IExec->DebugPrintF("[ogles2_vk] Texture s%u b%u: "
+                            D(("[ogles2_vk] Texture s%u b%u: "
                                                "max texture units reached (%u)\n",
                                                (unsigned)s, (unsigned)b,
-                                               (unsigned)OGLES2VK_MAX_BOUND_TEXTURES);
+                                               (unsigned)OGLES2VK_MAX_BOUND_TEXTURES));
                             continue;
                         }
 
@@ -1014,9 +1032,9 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                         IOGLES2->glGenTextures(1, (uint32 *)&glTex);
                         if (!glTex)
                         {
-                            IExec->DebugPrintF("[ogles2_vk] glGenTextures failed "
+                            D(("[ogles2_vk] glGenTextures failed "
                                                "for s%u b%u\n",
-                                               (unsigned)s, (unsigned)b);
+                                               (unsigned)s, (unsigned)b));
                             continue;
                         }
 
@@ -1051,8 +1069,8 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                         }
                         else
                         {
-                            IExec->DebugPrintF("[ogles2_vk] Sampler at texUnit %u: "
-                                               "no stored location\n", (unsigned)texUnit);
+                            D(("[ogles2_vk] Sampler at texUnit %u: "
+                                               "no stored location\n", (unsigned)texUnit));
                         }
 
                         if (glTextureCount < OGLES2VK_MAX_BOUND_TEXTURES)
@@ -1084,16 +1102,16 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
 
                     if (binding >= OGLES2VK_MAX_VERTEX_BINDINGS || !boundVBs[binding])
                     {
-                        IExec->DebugPrintF("[ogles2_vk] VB binding %u: no buffer bound\n",
-                                           (unsigned)binding);
+                        D(("[ogles2_vk] VB binding %u: no buffer bound\n",
+                                           (unsigned)binding));
                         continue;
                     }
 
                     OGLES2VKBuffer *buf = boundVBs[binding];
                     if (!buf->boundMemory || !buf->boundMemory->data)
                     {
-                        IExec->DebugPrintF("[ogles2_vk] VB binding %u: buffer has no memory\n",
-                                           (unsigned)binding);
+                        D(("[ogles2_vk] VB binding %u: buffer has no memory\n",
+                                           (unsigned)binding));
                         continue;
                     }
 
@@ -1102,8 +1120,8 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                     /* Validate that offsets are within memory allocation */
                     if (buf->boundOffset + vbOffset >= buf->boundMemory->size)
                     {
-                        IExec->DebugPrintF("[ogles2_vk] VB binding %u: offset past end of memory\n",
-                                           (unsigned)binding);
+                        D(("[ogles2_vk] VB binding %u: offset past end of memory\n",
+                                           (unsigned)binding));
                         continue;
                     }
 
@@ -1133,8 +1151,8 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                     IOGLES2->glGenBuffers(1, (uint32 *)&vbo);
                     if (!vbo)
                     {
-                        IExec->DebugPrintF("[ogles2_vk] glGenBuffers failed for binding %u\n",
-                                           (unsigned)binding);
+                        D(("[ogles2_vk] glGenBuffers failed for binding %u\n",
+                                           (unsigned)binding));
                         continue;
                     }
 
@@ -1155,11 +1173,12 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
 
                         int32 components;
                         uint32_t glType;
-                        if (!ogles2vk_FormatToAttrib(attr->format, &components, &glType))
+                        uint8_t  glNormalized;
+                        if (!ogles2vk_FormatToAttrib(attr->format, &components, &glType, &glNormalized))
                             continue;
 
                         IOGLES2->glVertexAttribPointer(
-                            attr->location, components, glType, GL_FALSE,
+                            attr->location, components, glType, glNormalized,
                             (int32)stride, (const void *)(uintptr_t)attr->offset);
                         IOGLES2->glEnableVertexAttribArray(attr->location);
 
@@ -1198,8 +1217,8 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                     IOGLES2->glGenBuffers(1, (uint32 *)&glIBO);
                     if (!glIBO)
                     {
-                        IExec->DebugPrintF("[ogles2_vk] DrawIndexed: glGenBuffers "
-                                           "failed for IBO\n");
+                        D(("[ogles2_vk] DrawIndexed: glGenBuffers "
+                                           "failed for IBO\n"));
                         break;
                     }
 
@@ -1296,8 +1315,8 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
             }
             vbDirty = 1;
 
-            IExec->DebugPrintF("[ogles2_vk] BindVertexBuffers: first=%u count=%u\n",
-                               (unsigned)first, (unsigned)count);
+            D(("[ogles2_vk] BindVertexBuffers: first=%u count=%u\n",
+                               (unsigned)first, (unsigned)count));
             break;
         }
 
@@ -1308,15 +1327,15 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
             if (boundIndexType != VK_INDEX_TYPE_UINT16 &&
                 boundIndexType != VK_INDEX_TYPE_UINT32)
             {
-                IExec->DebugPrintF("[ogles2_vk] BindIndexBuffer: unsupported "
+                D(("[ogles2_vk] BindIndexBuffer: unsupported "
                                    "type %u, defaulting to UINT32\n",
-                                   (unsigned)boundIndexType);
+                                   (unsigned)boundIndexType));
                 boundIndexType = VK_INDEX_TYPE_UINT32;
             }
-            IExec->DebugPrintF("[ogles2_vk] BindIndexBuffer: type=%s offset=%lu\n",
+            D(("[ogles2_vk] BindIndexBuffer: type=%s offset=%lu\n",
                                boundIndexType == VK_INDEX_TYPE_UINT16
                                    ? "UINT16" : "UINT32",
-                               (unsigned long)boundIndexOffset);
+                               (unsigned long)boundIndexOffset));
             break;
 
         case OGLES2VK_CMD_BIND_DESCRIPTOR_SETS:
@@ -1326,8 +1345,8 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
             for (uint32_t s = 0; s < count && (first + s) < OGLES2VK_MAX_DESCRIPTOR_SETS; s++)
                 boundDescSets[first + s] = (OGLES2VKDescriptorSet *)c->bindDescriptorSets.sets[s];
 
-            IExec->DebugPrintF("[ogles2_vk] BindDescriptorSets: first=%u count=%u\n",
-                               (unsigned)first, (unsigned)count);
+            D(("[ogles2_vk] BindDescriptorSets: first=%u count=%u\n",
+                               (unsigned)first, (unsigned)count));
             break;
         }
 
@@ -1443,7 +1462,7 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                 }
                 else
                 {
-                    IExec->DebugPrintF("[ogles2_vk] CopyBuffer: out of bounds\n");
+                    D(("[ogles2_vk] CopyBuffer: out of bounds\n"));
                 }
             }
             break;
@@ -1581,7 +1600,7 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                 }
                 else
                 {
-                    IExec->DebugPrintF("[ogles2_vk] FillBuffer: out of bounds\n");
+                    D(("[ogles2_vk] FillBuffer: out of bounds\n"));
                 }
             }
             break;
@@ -1602,7 +1621,7 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
                 }
                 else
                 {
-                    IExec->DebugPrintF("[ogles2_vk] UpdateBuffer: out of bounds\n");
+                    D(("[ogles2_vk] UpdateBuffer: out of bounds\n"));
                 }
             }
             break;

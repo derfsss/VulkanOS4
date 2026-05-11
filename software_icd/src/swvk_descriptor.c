@@ -47,11 +47,11 @@ VkResult swvk_CreateSampler(VkDevice device,
 
     *pSampler = (VkSampler)(uintptr_t)sampler;
 
-    IExec->DebugPrintF("[software_vk] Sampler created: mag=%lu, min=%lu, addrU=%lu, addrV=%lu\n",
+    D(("[software_vk] Sampler created: mag=%lu, min=%lu, addrU=%lu, addrV=%lu\n",
                        (unsigned long)sampler->magFilter,
                        (unsigned long)sampler->minFilter,
                        (unsigned long)sampler->addressModeU,
-                       (unsigned long)sampler->addressModeV);
+                       (unsigned long)sampler->addressModeV));
 
     return VK_SUCCESS;
 }
@@ -96,8 +96,8 @@ VkResult swvk_CreateDescriptorSetLayout(VkDevice device,
     layout->bindingCount = pCreateInfo->bindingCount;
     if (layout->bindingCount > SWVK_MAX_DESCRIPTOR_BINDINGS)
     {
-        IExec->DebugPrintF("[software_vk] WARNING: descriptor bindings clamped (%u > %u)\n",
-                           (unsigned)layout->bindingCount, (unsigned)SWVK_MAX_DESCRIPTOR_BINDINGS);
+        D(("[software_vk] WARNING: descriptor bindings clamped (%u > %u)\n",
+                           (unsigned)layout->bindingCount, (unsigned)SWVK_MAX_DESCRIPTOR_BINDINGS));
         layout->bindingCount = SWVK_MAX_DESCRIPTOR_BINDINGS;
     }
 
@@ -109,8 +109,8 @@ VkResult swvk_CreateDescriptorSetLayout(VkDevice device,
 
     *pSetLayout = (VkDescriptorSetLayout)(uintptr_t)layout;
 
-    IExec->DebugPrintF("[software_vk] Descriptor set layout created: %lu bindings\n",
-                       (unsigned long)layout->bindingCount);
+    D(("[software_vk] Descriptor set layout created: %lu bindings\n",
+                       (unsigned long)layout->bindingCount));
 
     return VK_SUCCESS;
 }
@@ -156,8 +156,8 @@ VkResult swvk_CreateDescriptorPool(VkDevice device,
 
     *pDescriptorPool = (VkDescriptorPool)(uintptr_t)pool;
 
-    IExec->DebugPrintF("[software_vk] Descriptor pool created: maxSets=%lu\n",
-                       (unsigned long)pool->maxSets);
+    D(("[software_vk] Descriptor pool created: maxSets=%lu\n",
+                       (unsigned long)pool->maxSets));
 
     return VK_SUCCESS;
 }
@@ -235,8 +235,8 @@ VkResult swvk_AllocateDescriptorSets(VkDevice device,
         pDescriptorSets[i] = (VkDescriptorSet)(uintptr_t)set;
     }
 
-    IExec->DebugPrintF("[software_vk] Allocated %lu descriptor sets\n",
-                       (unsigned long)pAllocateInfo->descriptorSetCount);
+    D(("[software_vk] Allocated %lu descriptor sets\n",
+                       (unsigned long)pAllocateInfo->descriptorSetCount));
 
     return VK_SUCCESS;
 }
@@ -290,8 +290,8 @@ void swvk_UpdateDescriptorSets(VkDevice device,
 
         if (binding >= SWVK_MAX_DESCRIPTOR_BINDINGS)
         {
-            IExec->DebugPrintF("[software_vk] WARNING: descriptor binding %lu out of range\n",
-                               (unsigned long)binding);
+            D(("[software_vk] WARNING: descriptor binding %lu out of range\n",
+                               (unsigned long)binding));
             continue;
         }
 
@@ -313,10 +313,10 @@ void swvk_UpdateDescriptorSets(VkDevice device,
             set->bindings[binding].offset = write->pBufferInfo[0].offset;
             set->bindings[binding].range  = write->pBufferInfo[0].range;
 
-            IExec->DebugPrintF("[software_vk] Descriptor set binding %lu: buffer, offset=%lu, range=%lu\n",
+            D(("[software_vk] Descriptor set binding %lu: buffer, offset=%lu, range=%lu\n",
                                (unsigned long)binding,
                                (unsigned long)write->pBufferInfo[0].offset,
-                               (unsigned long)write->pBufferInfo[0].range);
+                               (unsigned long)write->pBufferInfo[0].range));
         }
 
         /* For combined image sampler descriptors */
@@ -329,8 +329,8 @@ void swvk_UpdateDescriptorSets(VkDevice device,
             set->bindings[binding].sampler =
                 (SWVKSampler *)(uintptr_t)imgInfo->sampler;
 
-            IExec->DebugPrintF("[software_vk] Descriptor set binding %lu: combined image sampler\n",
-                               (unsigned long)binding);
+            D(("[software_vk] Descriptor set binding %lu: combined image sampler\n",
+                               (unsigned long)binding));
         }
     }
 }

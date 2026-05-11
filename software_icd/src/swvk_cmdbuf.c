@@ -132,8 +132,8 @@ VkResult swvk_EndCommandBuffer(VkCommandBuffer commandBuffer)
 
     cmd->recording = 0;
 
-    IExec->DebugPrintF("[software_vk] Command buffer recorded: %lu commands\n",
-                       (unsigned long)cmd->commandCount);
+    D(("[software_vk] Command buffer recorded: %lu commands\n",
+                       (unsigned long)cmd->commandCount));
 
     return VK_SUCCESS;
 }
@@ -146,8 +146,8 @@ static SWVKCommand *swvk_CmdAppend(SWVKCommandBuffer *cmd, SWVKCommandType type)
 {
     if (cmd->commandCount >= SWVK_MAX_COMMANDS)
     {
-        IExec->DebugPrintF("[software_vk] WARNING: command buffer full (%u/%u), command dropped\n",
-                           (unsigned)cmd->commandCount, (unsigned)SWVK_MAX_COMMANDS);
+        D(("[software_vk] WARNING: command buffer full (%u/%u), command dropped\n",
+                           (unsigned)cmd->commandCount, (unsigned)SWVK_MAX_COMMANDS));
         return NULL;
     }
 
@@ -284,8 +284,8 @@ void swvk_CmdPushConstants(VkCommandBuffer commandBuffer,
     /* Bounds check */
     if (offset + size > SWVK_MAX_PUSH_CONSTANT_SIZE)
     {
-        IExec->DebugPrintF("[software_vk] WARNING: push constants exceed max size (%u + %u > %u)\n",
-                           (unsigned)offset, (unsigned)size, (unsigned)SWVK_MAX_PUSH_CONSTANT_SIZE);
+        D(("[software_vk] WARNING: push constants exceed max size (%u + %u > %u)\n",
+                           (unsigned)offset, (unsigned)size, (unsigned)SWVK_MAX_PUSH_CONSTANT_SIZE));
         return;
     }
 
@@ -312,9 +312,9 @@ void swvk_CmdBindVertexBuffers(VkCommandBuffer commandBuffer,
     /* Bounds check */
     if (firstBinding + bindingCount > SWVK_MAX_VERTEX_BINDINGS)
     {
-        IExec->DebugPrintF("[software_vk] WARNING: vertex binding out of range (%u + %u > %u)\n",
+        D(("[software_vk] WARNING: vertex binding out of range (%u + %u > %u)\n",
                            (unsigned)firstBinding, (unsigned)bindingCount,
-                           (unsigned)SWVK_MAX_VERTEX_BINDINGS);
+                           (unsigned)SWVK_MAX_VERTEX_BINDINGS));
         return;
     }
 
@@ -744,8 +744,8 @@ void swvk_CmdUpdateBuffer(VkCommandBuffer commandBuffer,
     /* Clamp to inline storage limit */
     if (dataSize > 64)
     {
-        IExec->DebugPrintF("[software_vk] WARNING: CmdUpdateBuffer dataSize %lu exceeds 64 byte limit\n",
-                           (unsigned long)dataSize);
+        D(("[software_vk] WARNING: CmdUpdateBuffer dataSize %lu exceeds 64 byte limit\n",
+                           (unsigned long)dataSize));
         dataSize = 64;
     }
 
@@ -785,9 +785,9 @@ void swvk_CmdBindDescriptorSets(VkCommandBuffer commandBuffer,
     /* Bounds check */
     if (firstSet + descriptorSetCount > SWVK_MAX_DESCRIPTOR_SETS)
     {
-        IExec->DebugPrintF("[software_vk] WARNING: descriptor set out of range (%u + %u > %u)\n",
+        D(("[software_vk] WARNING: descriptor set out of range (%u + %u > %u)\n",
                            (unsigned)firstSet, (unsigned)descriptorSetCount,
-                           (unsigned)SWVK_MAX_DESCRIPTOR_SETS);
+                           (unsigned)SWVK_MAX_DESCRIPTOR_SETS));
         return;
     }
 

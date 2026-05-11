@@ -16,12 +16,6 @@
 #include "swvk_internal.h"
 #include "swvk_spirv.h"
 
-#ifdef DEBUG
-#define D(x) IExec->DebugPrintF x
-#else
-#define D(x) do {} while (0)
-#endif
-
 /****************************************************************************/
 /* Shader module creation                                                   */
 /****************************************************************************/

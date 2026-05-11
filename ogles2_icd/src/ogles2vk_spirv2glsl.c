@@ -656,6 +656,23 @@ int ogles2vk_SPIRV2GLSL(const uint32_t *leCode, uint32_t wordCount,
     spvc_compiler_options_set_bool(options,
         SPVC_COMPILER_OPTION_GLSL_EMIT_PUSH_CONSTANT_AS_UNIFORM_BUFFER, SPVC_TRUE);
 
+    /*
+     * Force flattened in/out blocks. Without this, SPIRV-Cross emits the
+     * struct-typed varyings produced by glslang directly:
+     *     out struct { vec4 Color; vec2 UV; } Out;   // vertex
+     *     in  struct { vec4 Color; vec2 UV; } In;    // fragment
+     * Warp3D Nova's GLSL ES linker matches varyings by name, so `Out.Color`
+     * (vertex output) and `In.Color` (fragment input) never match and the
+     * program fails to link with: "Fragment shader has input In.Color, but
+     * the previous shader pipeline stage doesn't."
+     *
+     * With FLATTEN_IO_BLOCKS the struct is decomposed into discrete varyings
+     * sharing identical names across stages (derived from the field, not the
+     * block instance), so the linker's name match succeeds.
+     */
+    spvc_compiler_options_set_bool(options,
+        SPVC_COMPILER_OPTION_GLSL_FORCE_FLATTENED_IO_BLOCKS, SPVC_TRUE);
+
     if (spvc_compiler_install_compiler_options(compiler, options) != SPVC_SUCCESS)
         goto cleanup;
 
@@ -719,6 +736,39 @@ int ogles2vk_SPIRV2GLSL(const uint32_t *leCode, uint32_t wordCount,
                                result->samplers[idx].name,
                                (unsigned)result->samplers[idx].set,
                                (unsigned)result->samplers[idx].binding);
+        }
+    }
+
+    /*
+     * Step 6b: Rename interface block variables to "vary" in BOTH stages.
+     *
+     * Even with FORCE_FLATTENED_IO_BLOCKS, SPIRV-Cross prefixes the emitted
+     * field names with the original block instance name from the SPIR-V
+     * (`Out` in vertex glsl, `In` in fragment glsl). Result:
+     *   vertex   : out vec4 Out_Color; out vec2 Out_UV;
+     *   fragment : in  vec4 In_Color;  in  vec2 In_UV;
+     * Warp3D Nova links varyings by name so the names don't match.
+     *
+     * Force both stages to use the same instance name. After renaming both
+     * the vertex output block and the fragment input block to "vary",
+     * SPIRV-Cross emits matching `vary_Color` / `vary_UV` symbols and the
+     * GLSL ES linker succeeds.
+     */
+    for (int iface = 0; iface < 2; ++iface)
+    {
+        spvc_resource_type rtype = (iface == 0)
+            ? SPVC_RESOURCE_TYPE_STAGE_INPUT
+            : SPVC_RESOURCE_TYPE_STAGE_OUTPUT;
+        const spvc_reflected_resource *list = NULL;
+        size_t count = 0;
+        if (spvc_resources_get_resource_list_for_type(resources, rtype, &list, &count) != SPVC_SUCCESS)
+            continue;
+        for (size_t i = 0; i < count; i++)
+        {
+            spvc_type t = spvc_compiler_get_type_handle(compiler, list[i].type_id);
+            spvc_basetype bt = spvc_type_get_basetype(t);
+            if (bt == SPVC_BASETYPE_STRUCT)
+                spvc_compiler_set_name(compiler, list[i].id, "vary");
         }
     }
 

@@ -50,7 +50,7 @@ VkResult swvk_CreateDevice(VkPhysicalDevice physicalDevice,
 
     *pDevice = (VkDevice)dev;
 
-    IExec->DebugPrintF("[software_vk] Device created\n");
+    D(("[software_vk] Device created\n"));
 
     return VK_SUCCESS;
 }
@@ -63,7 +63,7 @@ void swvk_DestroyDevice(VkDevice device,
     if (device != VK_NULL_HANDLE)
     {
         IExec->FreeVec((APTR)device);
-        IExec->DebugPrintF("[software_vk] Device destroyed\n");
+        D(("[software_vk] Device destroyed\n"));
     }
 }
 
