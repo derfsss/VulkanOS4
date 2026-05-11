@@ -151,8 +151,7 @@ static int LoadOneICD(const char *jsonPath)
     struct ICDState *state = &g_loaderState.icds[g_loaderState.icdCount];
     state->library = icdLib;
     state->iface   = icdIFace;
-    strncpy(state->libraryPath, libPath, sizeof(state->libraryPath) - 1);
-    state->libraryPath[sizeof(state->libraryPath) - 1] = '\0';
+    snprintf(state->libraryPath, sizeof(state->libraryPath), "%s", libPath);
     state->instance = NULL;
     state->physDevices = NULL;
     state->physDevCount = 0;
