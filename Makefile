@@ -83,6 +83,7 @@ examples: loader
 	$(MAKE) -C examples/23_cow3d all
 	$(MAKE) -C examples/21_image_texture all
 	$(MAKE) -C examples/22_gltf_viewer all
+	$(MAKE) -C examples/24_proc_addr all
 
 # Tools
 tools: loader
@@ -219,6 +220,9 @@ dist:
 	cp build/22_gltf_viewer              dist/VulkanOS4/Examples/22_gltf_viewer/
 	cp examples/22_gltf_viewer/22_gltf_viewer.c dist/VulkanOS4/Examples/22_gltf_viewer/
 	cp -r examples/22_gltf_viewer/shaders dist/VulkanOS4/Examples/22_gltf_viewer/
+	mkdir -p dist/VulkanOS4/Examples/24_proc_addr
+	cp build/24_proc_addr                dist/VulkanOS4/Examples/24_proc_addr/
+	cp examples/24_proc_addr/24_proc_addr.c dist/VulkanOS4/Examples/24_proc_addr/
 	@# Tools
 	cp build/vulkaninfo               dist/VulkanOS4/Tools/
 	cp tools/vulkaninfo/vulkaninfo.c  dist/VulkanOS4/Tools/
@@ -264,7 +268,7 @@ check: all
 	@file build/software_vk.library | grep "ELF 32-bit MSB" || (echo "FAIL: software_vk.library" && exit 1)
 	@file build/ogles2_vk.library | grep "ELF 32-bit MSB" || (echo "FAIL: ogles2_vk.library" && exit 1)
 	@echo "Checking example binaries..."
-	@for ex in 01_enumerate 02_clear 03_gradient 04_checkerboard 05_plasma 06_rings 07_waves 08_triangle 09_rotating 10_depth 11_textured 12_wireframe_cube 13_solid_cube 14_instanced_cubes 15_render_pass 16_transfer_ops 17_events_sync 18_query_demo 19_indirect_draw 20_torus 23_cow3d 21_image_texture 22_gltf_viewer; do \
+	@for ex in 01_enumerate 02_clear 03_gradient 04_checkerboard 05_plasma 06_rings 07_waves 08_triangle 09_rotating 10_depth 11_textured 12_wireframe_cube 13_solid_cube 14_instanced_cubes 15_render_pass 16_transfer_ops 17_events_sync 18_query_demo 19_indirect_draw 20_torus 23_cow3d 21_image_texture 22_gltf_viewer 24_proc_addr; do \
 		file build/$$ex | grep "ELF 32-bit MSB" > /dev/null || (echo "FAIL: $$ex" && exit 1); \
 	done
 	@echo "Checking tools..."

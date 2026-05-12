@@ -200,6 +200,7 @@ Examples/20_torus/20_torus
 | 20 | `20_torus` | Textured torus with starfield background |
 | 21 | `21_image_texture` | Image file loading via stb_image |
 | 22 | `22_gltf_viewer` | glTF 2.0 model viewer via cgltf |
+| 24 | `24_proc_addr` | `vkGetDeviceProcAddr` ABI regression test — verifies raw `PFN_vk*` resolution works across queue/memory/command/sync/WSI categories |
 
 Examples 21 and 22 require optional third-party headers (stb_image.h and
 cgltf.h respectively). They include procedural fallbacks and will still
