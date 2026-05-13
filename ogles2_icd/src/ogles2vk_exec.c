@@ -266,6 +266,7 @@ struct OGLES2IFace
     void   APICALL (*glDrawElementsBaseVertexOES)(struct OGLES2IFace *Self, uint32 mode, int32 count, uint32 type, const void *indices, int32 basevertex);
     void * APICALL (*aglCreateContext2)(struct OGLES2IFace *Self, uint32 *errcode, struct TagItem *tags);
     void * APICALL (*aglCreateContextTags2)(struct OGLES2IFace *Self, uint32 *errcode, ...);
+    void   APICALL (*aglSetParams2)(struct OGLES2IFace *Self, struct TagItem *tags);
 };
 
 /* OGLES2 context creation tags */
@@ -344,6 +345,30 @@ void ogles2vk_ShutdownOGLES2Context(OGLES2VKDevice *dev)
     dev->glContext = NULL;
 
     D(("[ogles2_vk] OGLES2 context destroyed\n"));
+}
+
+/* Toggle OGLES2 vsync on the current context. Called by
+** ogles2vk_CreateSwapchainKHR with the swapchain's VkPresentModeKHR
+** so that VK_PRESENT_MODE_FIFO_KHR (and friends) actually
+** honour the display refresh rate -- previously the context was
+** created with VSYNC=0 hard-coded, which let the example loop submit
+** at thousands of FPS against a 75-144 Hz display, producing visible
+** animation skipping as the W3D Nova compositor sampled one of many
+** queued frames per refresh non-deterministically. With this enabled,
+** aglSwapBuffers blocks for the actual display tick, so each
+** vkQueuePresentKHR call pace-matches the monitor regardless of
+** refresh rate. */
+void ogles2vk_SetVsync(OGLES2VKDevice *dev, int enable)
+{
+    if (!dev || !dev->glContext || !IOGLES2)
+        return;
+
+    struct TagItem tags[] = {
+        { OGLES2_CCT_VSYNC, (Tag)(enable ? 1u : 0u) },
+        { TAG_DONE,          0 }
+    };
+    IOGLES2->aglSetParams2(tags);
+    D(("[ogles2_vk] OGLES2 vsync %s\n", enable ? "ON" : "OFF"));
 }
 
 /****************************************************************************/

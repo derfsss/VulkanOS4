@@ -178,6 +178,18 @@ VkResult ogles2vk_CreateSwapchainKHR(
         }
     }
 
+    /* Honour the swapchain's presentMode by toggling OGLES2 vsync.
+    ** IMMEDIATE = no vsync (may tear, runs as fast as CPU submits);
+    ** FIFO / FIFO_RELAXED / MAILBOX = vsync (paced to display refresh).
+    ** Without this, aglSwapBuffers runs unthrottled and animation
+    ** skips visibly because the W3D Nova compositor samples one of
+    ** many queued frames per refresh. */
+    if (dev->glContext)
+    {
+        int wantVsync = (pCreateInfo->presentMode != VK_PRESENT_MODE_IMMEDIATE_KHR);
+        ogles2vk_SetVsync(dev, wantVsync);
+    }
+
     /* Allocate swapchain image metadata (for Vulkan API tracking) */
     VkDeviceSize imageSize = (VkDeviceSize)sc->width * sc->height * 4;
     if (imageSize > 0xFFFFFFFFULL)

@@ -669,6 +669,7 @@ int ogles2vk_SPIRV2GLSL(const uint32_t *leCode, uint32_t wordCount, uint32_t cod
 void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *cmd);
 int  ogles2vk_InitOGLES2Context(OGLES2VKDevice *dev, void *window);
 void ogles2vk_ShutdownOGLES2Context(OGLES2VKDevice *dev);
+void ogles2vk_SetVsync(OGLES2VKDevice *dev, int enable);
 
 /*------------------------------------------------------------------------
 ** Swapchain state
