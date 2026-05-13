@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "../common/vkex_loop.h"
 
 #define WIN_WIDTH  400
 #define WIN_HEIGHT 300
@@ -28,6 +29,7 @@
 
 int main(int argc, char **argv)
 {
+int    vkex_dur = vkex_duration_secs(argc, argv);    time_t vkex_t0  = time(NULL);
     (void)argc;
     (void)argv;
     SetTaskPri(FindTask(NULL), -100);
@@ -276,6 +278,10 @@ int main(int argc, char **argv)
     BOOL running = TRUE;
     while (running && frame < 300)
     {
+        /* Exit on -d N expiry or Shell CTRL-C */
+        if (vkex_expired(vkex_dur, vkex_t0))   running = FALSE;
+        if (CheckSignal(SIGBREAKF_CTRL_C))     running = FALSE;
+
         /* Check for close gadget (non-blocking) */
         struct IntuiMessage *msg;
         while ((msg = (struct IntuiMessage *)GetMsg(window->UserPort)) != NULL)

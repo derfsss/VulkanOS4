@@ -24,12 +24,14 @@
 
 #include "shaders/vert_spv.h"
 #include "shaders/frag_spv.h"
+#include "../common/vkex_loop.h"
 
 #define WIN_WIDTH  512
 #define WIN_HEIGHT 512
 
 int main(int argc, char **argv)
 {
+    int vkex_dur = vkex_duration_secs(argc, argv);
     (void)argc; (void)argv;
     SetTaskPri(FindTask(NULL), -100);
 
@@ -352,19 +354,8 @@ int main(int argc, char **argv)
 
     printf("Checkerboard rendered!\n");
 
-    /* Wait for close */
-    struct IntuiMessage *msg;
-    BOOL done = FALSE;
-    while (!done)
-    {
-        WaitPort(window->UserPort);
-        while ((msg = (struct IntuiMessage *)GetMsg(window->UserPort)) != NULL)
-        {
-            if (msg->Class == IDCMP_CLOSEWINDOW) done = TRUE;
-            ReplyMsg((struct Message *)msg);
-        }
-    }
-
+    /* Wait for close gadget OR -d N timeout OR Shell CTRL-C */
+    vkex_wait_close_or_timer(window, vkex_dur);
 cleanup:
     if (device) vkDeviceWaitIdle(device);
     if (fence) vkDestroyFence(device, fence, NULL);

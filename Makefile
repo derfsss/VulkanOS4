@@ -223,6 +223,8 @@ dist:
 	mkdir -p dist/VulkanOS4/Examples/24_proc_addr
 	cp build/24_proc_addr                dist/VulkanOS4/Examples/24_proc_addr/
 	cp examples/24_proc_addr/24_proc_addr.c dist/VulkanOS4/Examples/24_proc_addr/
+	mkdir -p dist/VulkanOS4/Examples/common
+	cp examples/common/vkex_loop.h       dist/VulkanOS4/Examples/common/
 	@# Tools
 	cp build/vulkaninfo               dist/VulkanOS4/Tools/
 	cp tools/vulkaninfo/vulkaninfo.c  dist/VulkanOS4/Tools/

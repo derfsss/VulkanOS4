@@ -34,6 +34,7 @@
 
 #include "shaders/cow_vert_spv.h"
 #include "shaders/cow_frag_spv.h"
+#include "../common/vkex_loop.h"
 
 #define WIN_WIDTH  640
 #define WIN_HEIGHT 480
@@ -188,6 +189,7 @@ static struct CowVertex *convertCowVertices(const float *srcPoints,
 **======================================================================*/
 int main(int argc, char **argv)
 {
+int    vkex_dur = vkex_duration_secs(argc, argv);    time_t vkex_t0  = time(NULL);
     (void)argc; (void)argv;
     SetTaskPri(FindTask(NULL), -100);
 
@@ -917,6 +919,10 @@ int main(int argc, char **argv)
 
     while (running)
     {
+        /* Exit on -d N expiry or Shell CTRL-C */
+        if (vkex_expired(vkex_dur, vkex_t0))   running = FALSE;
+        if (CheckSignal(SIGBREAKF_CTRL_C))     running = FALSE;
+
         struct IntuiMessage *msg;
         while ((msg = (struct IntuiMessage *)GetMsg(window->UserPort)) != NULL)
         {

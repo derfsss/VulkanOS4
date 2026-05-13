@@ -22,6 +22,7 @@
 /* Embedded SPIR-V bytecode (pre-compiled from GLSL) */
 #include "shaders/vert_spv.h"
 #include "shaders/frag_spv.h"
+#include "../common/vkex_loop.h"
 
 /* Window dimensions */
 #define WIN_WIDTH  800
@@ -63,6 +64,7 @@ static VkShaderModule createShaderModule(VkDevice device,
 
 int main(int argc, char **argv)
 {
+    int vkex_dur = vkex_duration_secs(argc, argv);
     (void)argc;
     (void)argv;
     SetTaskPri(FindTask(NULL), -100);
@@ -688,22 +690,8 @@ int main(int argc, char **argv)
     ** 12. Wait for close gadget
     **--------------------------------------------------------------------*/
     printf("Waiting for close gadget...\n");
-    {
-        struct IntuiMessage *msg;
-        BOOL running = TRUE;
-        while (running)
-        {
-            WaitPort(window->UserPort);
-            while ((msg = (struct IntuiMessage *)
-                    GetMsg(window->UserPort)) != NULL)
-            {
-                if (msg->Class == IDCMP_CLOSEWINDOW)
-                    running = FALSE;
-                ReplyMsg((struct Message *)msg);
-            }
-        }
-    }
-    printf("Close gadget pressed, cleaning up...\n");
+    vkex_wait_close_or_timer(window, vkex_dur);
+    printf("Close gadget pressed (or -d N expired), cleaning up...\n");
 
     /*----------------------------------------------------------------------
     ** 13. Cleanup (reverse order)

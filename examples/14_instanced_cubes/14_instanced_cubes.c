@@ -30,6 +30,7 @@
 
 #include "shaders/vert_spv.h"
 #include "shaders/frag_spv.h"
+#include "../common/vkex_loop.h"
 
 #define WIN_WIDTH  512
 #define WIN_HEIGHT 512
@@ -39,6 +40,7 @@ struct Vertex { float pos[3]; float nor[3]; };
 
 int main(int argc, char **argv)
 {
+int    vkex_dur = vkex_duration_secs(argc, argv);    time_t vkex_t0  = time(NULL);
     (void)argc; (void)argv;
     SetTaskPri(FindTask(NULL), -100);
 
@@ -264,6 +266,10 @@ int main(int argc, char **argv)
     float angleY=0.0f; uint32_t frame=0; clock_t startClock=clock();
     BOOL running=TRUE;
     while (running) {
+        /* Exit on -d N expiry or Shell CTRL-C */
+        if (vkex_expired(vkex_dur, vkex_t0))   running = FALSE;
+        if (CheckSignal(SIGBREAKF_CTRL_C))     running = FALSE;
+
         struct IntuiMessage *msg;
         while ((msg=(struct IntuiMessage*)GetMsg(window->UserPort))!=NULL) {
             if (msg->Class==IDCMP_CLOSEWINDOW) running=FALSE;

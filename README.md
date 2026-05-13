@@ -174,6 +174,17 @@ Examples/12_wireframe_cube/12_wireframe_cube
 Examples/20_torus/20_torus
 ```
 
+All graphical examples accept an optional `-d N` (or `--duration N`)
+flag that exits after N seconds. Without the flag, the example runs
+until the close gadget is pressed (the original behaviour). Useful
+for automated test runs and quick previews:
+
+```
+Examples/08_triangle/08_triangle -d 10        ; auto-exit after 10s
+```
+
+Examples also respond to CTRL-C from the shell they were launched in.
+
 ### Example list
 
 | # | Example | Description |

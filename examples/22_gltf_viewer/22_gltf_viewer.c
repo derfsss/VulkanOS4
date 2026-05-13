@@ -39,6 +39,7 @@
 
 #include "shaders/vert_spv.h"
 #include "shaders/frag_spv.h"
+#include "../common/vkex_loop.h"
 
 #ifdef USE_CGLTF
 #define CGLTF_IMPLEMENTATION
@@ -260,6 +261,7 @@ static void free_model(ModelData *model)
 **======================================================================*/
 int main(int argc, char **argv)
 {
+int    vkex_dur = vkex_duration_secs(argc, argv);    time_t vkex_t0  = time(NULL);
     (void)argc;
     SetTaskPri(FindTask(NULL), -100);
 
@@ -638,6 +640,10 @@ int main(int argc, char **argv)
     BOOL running = TRUE;
     while (running)
     {
+        /* Exit on -d N expiry or Shell CTRL-C */
+        if (vkex_expired(vkex_dur, vkex_t0))   running = FALSE;
+        if (CheckSignal(SIGBREAKF_CTRL_C))     running = FALSE;
+
         struct IntuiMessage *msg;
         while ((msg = (struct IntuiMessage *)GetMsg(window->UserPort)) != NULL)
         {
