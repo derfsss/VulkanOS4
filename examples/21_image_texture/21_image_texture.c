@@ -155,8 +155,8 @@ int    vkex_dur = vkex_duration_secs(argc, argv);    time_t vkex_t0  = time(NULL
     uint32_t         imgCount  = 0;
     int exitCode = 0;
 
-    /* Image filename from command line, or NULL */
-    const char *imageFile = (argc > 1) ? argv[1] : NULL;
+    /* Image filename from command line (first positional, ignoring -d N). */
+    const char *imageFile = vkex_positional(argc, argv, 0);
 
     printf("=== Vulkan Image Texture ===\n");
     if (imageFile)

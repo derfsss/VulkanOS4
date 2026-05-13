@@ -288,7 +288,7 @@ int    vkex_dur = vkex_duration_secs(argc, argv);    time_t vkex_t0  = time(NULL
     int exitCode = 0;
     ModelData model;
 
-    const char *modelFile = (argc > 1) ? argv[1] : NULL;
+    const char *modelFile = vkex_positional(argc, argv, 0);
 
     printf("=== Vulkan glTF Viewer ===\n");
     if (modelFile)

@@ -74,6 +74,26 @@ static int vkex_duration_secs(int argc, char **argv)
     return 0;
 }
 
+/* Return argv[n]'th positional (non-flag) argument, ignoring -d N
+** / --duration N pairs. Returns NULL if no such positional exists.
+** Use `n=0` for "the first file/path argument the example expects". */
+static const char *vkex_positional(int argc, char **argv, int n) __attribute__((unused));
+static const char *vkex_positional(int argc, char **argv, int n)
+{
+    int seen = 0;
+    for (int i = 1; i < argc; i++) {
+        if ((strcmp(argv[i], "-d") == 0 ||
+             strcmp(argv[i], "--duration") == 0) && i + 1 < argc)
+        {
+            i++;       /* skip the value too */
+            continue;
+        }
+        if (seen == n) return argv[i];
+        seen++;
+    }
+    return NULL;
+}
+
 /*--------------------------------------------------------------------*/
 /* Time helpers                                                       */
 /*--------------------------------------------------------------------*/
