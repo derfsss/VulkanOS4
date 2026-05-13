@@ -670,6 +670,7 @@ void ogles2vk_ExecuteCommandBuffer(OGLES2VKDevice *dev, OGLES2VKCommandBuffer *c
 int  ogles2vk_InitOGLES2Context(OGLES2VKDevice *dev, void *window);
 void ogles2vk_ShutdownOGLES2Context(OGLES2VKDevice *dev);
 void ogles2vk_SetVsync(OGLES2VKDevice *dev, int enable);
+void ogles2vk_GpuFinish(void);
 
 /*------------------------------------------------------------------------
 ** Swapchain state

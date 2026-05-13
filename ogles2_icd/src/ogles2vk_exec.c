@@ -347,6 +347,22 @@ void ogles2vk_ShutdownOGLES2Context(OGLES2VKDevice *dev)
     D(("[ogles2_vk] OGLES2 context destroyed\n"));
 }
 
+/* Block until all pending GL work is complete. Used by
+** ogles2vk_WaitForFences to give vkWaitForFences real CPU/GPU sync
+** semantics -- otherwise the CPU loop runs uncapped, the OGLES2
+** driver's command queue fills with submitted-but-not-yet-rendered
+** frames, and the Workbench compositor's "which queued frame did I
+** just show" sampling produces visible animation jitter. With this
+** in place the CPU is throttled to GPU completion: VK_PRESENT_MODE_FIFO_KHR
+** stays paced to the display via aglSwapBuffers' vsync, and
+** VK_PRESENT_MODE_IMMEDIATE_KHR runs uncapped but jitter-free
+** (tearing remains, by design for IMMEDIATE). */
+void ogles2vk_GpuFinish(void)
+{
+    if (IOGLES2)
+        IOGLES2->glFinish();
+}
+
 /* Toggle OGLES2 vsync on the current context. Called by
 ** ogles2vk_CreateSwapchainKHR with the swapchain's VkPresentModeKHR
 ** so that VK_PRESENT_MODE_FIFO_KHR (and friends) actually

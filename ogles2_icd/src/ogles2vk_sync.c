@@ -66,7 +66,16 @@ VkResult ogles2vk_WaitForFences(VkDevice device, uint32_t fenceCount,
 
     if (!pFences) return VK_ERROR_INITIALIZATION_FAILED;
 
-    /* Synchronous execution -- all fences are immediately ready */
+    /* Real CPU/GPU sync -- block until all submitted GL work finishes
+    ** before marking the fences signalled. Without this the CPU loop
+    ** can outrun the GPU indefinitely; the driver's command queue
+    ** fills with frames the compositor never displays, and apps see
+    ** non-uniform animation steps even with vsync off. With glFinish
+    ** here vkWaitForFences provides the synchronisation point its
+    ** name implies, and VK_PRESENT_MODE_IMMEDIATE_KHR can run
+    ** uncapped-but-smooth (tearing permitted, jitter is not). */
+    ogles2vk_GpuFinish();
+
     for (uint32_t i = 0; i < fenceCount; i++)
     {
         if (pFences[i] != VK_NULL_HANDLE)
