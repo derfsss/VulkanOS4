@@ -268,11 +268,12 @@ See [THIRD_PARTY.md](THIRD_PARTY.md) for full attribution details.
 
 ## Changelog
 
-### 1.3 -- 2026-05-11
+### 1.3 -- 2026-05-13
 
-ABI and compatibility fixes; build hygiene. Many of the underlying
-issues were diagnosed by Andrea Palmate' ([afxgroup](https://github.com/afxgroup))
-in [PR #1](https://github.com/derfsss/VulkanOS4/pull/1).
+ABI and compatibility fixes; presentation correctness; build hygiene.
+Many of the underlying issues were diagnosed by Andrea Palmate'
+([afxgroup](https://github.com/afxgroup)) in
+[PR #1](https://github.com/derfsss/VulkanOS4/pull/1).
 
 ICD changes:
 - Fix `vkGetDeviceProcAddr` ABI: the GPU ICD's `LookupRawProcAddr`
@@ -282,6 +283,23 @@ ICD changes:
   table (~210 entries) and replaced the fallback with `return NULL`.
   Also extended the SW ICD's `RAW` table with the four surface queries
   and five swapchain entry points it was missing.
+- Honour `VK_PRESENT_MODE_FIFO_KHR` in the GPU ICD via OGLES2 vsync.
+  The OGLES2 context was previously created with `OGLES2_CCT_VSYNC=0`
+  hard-coded, regardless of the swapchain's `presentMode`. With vsync
+  off, `aglSwapBuffers` returned immediately, the CPU loop submitted
+  thousands of frames per second, and the Warp3D Nova compositor's
+  per-refresh sampling produced visible animation skipping on
+  rotating-cube examples regardless of the display's actual refresh
+  rate. Now `vkCreateSwapchainKHR` toggles vsync via `aglSetParams2`
+  based on the swapchain's `presentMode`, so FIFO/FIFO_RELAXED/MAILBOX
+  vsync pace to whatever refresh rate the W3D Nova driver reports.
+- Give `vkWaitForFences` real CPU/GPU sync via `glFinish`. The GPU
+  ICD's fence wait was a no-op (just flipping a boolean) which let
+  the CPU loop outrun the GPU and queue up frames the compositor
+  never displays. Calling `glFinish` before marking fences signalled
+  matches the standard Vulkan spec semantic and tightens up the
+  frame-time distribution even in FIFO mode (max frame-time dropped
+  from a 1.2 s outlier tail to ~14.7 ms).
 - Detect SPIR-V endianness from the magic word in the SW ICD, rather
   than unconditionally byte-swapping. Per the Vulkan spec, the magic
   word may be supplied in either endianness. The previous behaviour
@@ -304,6 +322,20 @@ ICD changes:
 - Add a `D(...)` debug-print macro to both ICDs (no-op when `DEBUG`
   is undefined) and convert the existing `IExec->DebugPrintF` call
   sites. Lets release builds skip the trace overhead.
+
+Examples and tests:
+- New regression test example `24_proc_addr`: 23 assertions across 7
+  function categories verifying that `vkGetDeviceProcAddr` returns
+  raw C-ABI pointers (no APICALL trampolines), so any future drift
+  between the `DISPATCH` and `RAW` tables fails on first run.
+- All graphical examples accept `-d N` / `--duration N` to exit after
+  N seconds. Default behaviour (no flag) unchanged. Animated examples
+  check `time(NULL)` in the render loop; render-once examples use a
+  multi-signal `Wait` on the window port + `timer.device` + CTRL-C.
+- `21_image_texture` / `22_gltf_viewer` now skip the `-d N` flag when
+  scanning argv for their positional file argument, so they can be
+  used in automated test sweeps without spurious "file not found"
+  fallbacks.
 
 Build / loader:
 - Wire `$(DEBUG)` into the Docker build recipes for the loader and
