@@ -119,6 +119,10 @@ typedef struct SWVKShaderModule
     uint32_t         *code;       /* Byte-swapped SPIR-V words */
     uint32_t          wordCount;
     struct SpvModule *parsed;     /* Parsed SPIR-V module */
+    uint32_t          refCount;   /* App holds 1; each referencing pipeline +1.
+                                  ** Freed only when this reaches 0, so the app
+                                  ** may legally destroy the module right after
+                                  ** pipeline creation (per the Vulkan spec). */
 } SWVKShaderModule;
 
 /*------------------------------------------------------------------------
