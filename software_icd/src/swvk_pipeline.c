@@ -129,6 +129,11 @@ VkResult swvk_CreateShaderModule(VkDevice device,
     if (spv_CompileProgram(mod->parsed) != 0)
         D(("[software_vk] SPIR-V pre-compile skipped (non-fatal)\n"));
 
+    /* One reference for the application's own handle. Pipelines that capture
+    ** this module take additional references (see swvk_AcquireShaderModule),
+    ** so destroying the app handle does not free a module still in use. */
+    mod->refCount = 1;
+
     *pShaderModule = (VkShaderModule)(uintptr_t)mod;
 
     D(("[software_vk] Shader module created: %lu words\n",
@@ -141,17 +146,20 @@ VkResult swvk_CreateShaderModule(VkDevice device,
 /* Shader module destruction                                                */
 /****************************************************************************/
 
-void swvk_DestroyShaderModule(VkDevice device,
-                              VkShaderModule shaderModule,
-                              const VkAllocationCallbacks *pAllocator)
+/* Drop one reference to a shader module, freeing it only when the last
+** reference (app handle + any capturing pipelines) is gone. NULL-safe. */
+static void swvk_ReleaseShaderModule(SWVKShaderModule *mod)
 {
-    (void)device;
-    (void)pAllocator;
-
-    if (shaderModule == VK_NULL_HANDLE)
+    if (!mod)
         return;
 
-    SWVKShaderModule *mod = (SWVKShaderModule *)(uintptr_t)shaderModule;
+    /* refCount can legitimately be 0 for a module created before this
+    ** ref-counting existed; treat that as "free now". */
+    if (mod->refCount > 1)
+    {
+        mod->refCount--;
+        return;
+    }
 
     if (mod->parsed)
     {
@@ -165,6 +173,29 @@ void swvk_DestroyShaderModule(VkDevice device,
         IExec->FreeVec(mod->code);
 
     IExec->FreeVec(mod);
+}
+
+/* Take an extra reference so a captured module survives the app destroying
+** its own handle. NULL-safe. */
+static void swvk_AcquireShaderModule(SWVKShaderModule *mod)
+{
+    if (mod)
+        mod->refCount++;
+}
+
+void swvk_DestroyShaderModule(VkDevice device,
+                              VkShaderModule shaderModule,
+                              const VkAllocationCallbacks *pAllocator)
+{
+    (void)device;
+    (void)pAllocator;
+
+    if (shaderModule == VK_NULL_HANDLE)
+        return;
+
+    /* Releases the application's reference. If a pipeline still holds one,
+    ** the module's memory stays valid until that pipeline is destroyed. */
+    swvk_ReleaseShaderModule((SWVKShaderModule *)(uintptr_t)shaderModule);
 }
 
 /****************************************************************************/
@@ -472,9 +503,15 @@ VkResult swvk_CreateGraphicsPipelines(VkDevice device,
             SWVKShaderModule *mod = (SWVKShaderModule *)(uintptr_t)stage->module;
 
             if (stage->stage == VK_SHADER_STAGE_VERTEX_BIT)
+            {
                 pipe->vertShader = mod;
+                swvk_AcquireShaderModule(mod);
+            }
             else if (stage->stage == VK_SHADER_STAGE_FRAGMENT_BIT)
+            {
                 pipe->fragShader = mod;
+                swvk_AcquireShaderModule(mod);
+            }
         }
 
         /* Vertex input state */
@@ -581,7 +618,14 @@ void swvk_DestroyPipeline(VkDevice device,
     if (pipeline == VK_NULL_HANDLE)
         return;
 
-    IExec->FreeVec((APTR)(uintptr_t)pipeline);
+    SWVKPipeline *pipe = (SWVKPipeline *)(uintptr_t)pipeline;
+
+    /* Drop the references taken in swvk_CreateGraphicsPipelines so a module
+    ** the app already destroyed is finally freed here. */
+    swvk_ReleaseShaderModule(pipe->vertShader);
+    swvk_ReleaseShaderModule(pipe->fragShader);
+
+    IExec->FreeVec(pipe);
 }
 
 /****************************************************************************/
