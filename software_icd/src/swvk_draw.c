@@ -450,12 +450,16 @@ static void swvk_ViewportTransform(SWVKVertexOutput *v, const VkViewport *vp)
     float ndcY = v->position[1] / w;
     float ndcZ = v->position[2] / w;
 
-    /* Viewport transform: NDC [-1,1] -> screen pixels
-    ** OpenGL convention (matches GPU ICD / OGLES2): Y=-1 at bottom,
-    ** Y=+1 at top. This ensures software and GPU ICDs produce
-    ** identical output for the same projection matrices. */
+    /* Viewport transform: NDC [-1,1] -> framebuffer pixels, per the VULKAN
+    ** convention (Vulkan spec 27.x): NDC Y=-1 maps to the TOP of the framebuffer
+    ** (y = vp->y), Y=+1 to the BOTTOM (y = vp->y + height) - i.e. y grows down,
+    ** the OPPOSITE of OpenGL. VulkanOS4 is a Vulkan implementation, so it must
+    ** match desktop Vulkan here; a previous OpenGL-style (1 - ndcY) flip rendered
+    ** all content vertically inverted vs the spec. NOTE: the ogles2_vk GPU ICD,
+    ** which sits on GLES's Y-up convention, must apply the equivalent flip in its
+    ** GLES translation so the software and GPU ICDs agree. */
     v->screenX = vp->x + (ndcX + 1.0f) * 0.5f * vp->width;
-    v->screenY = vp->y + (1.0f - ndcY) * 0.5f * vp->height;
+    v->screenY = vp->y + (ndcY + 1.0f) * 0.5f * vp->height;
     v->screenZ = vp->minDepth + ndcZ * (vp->maxDepth - vp->minDepth);
 }
 
