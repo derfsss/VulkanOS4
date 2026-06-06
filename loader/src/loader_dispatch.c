@@ -70,8 +70,9 @@ VkResult APICALL Loader_vkCreateInstance(struct VulkanIFace *Self,
         VkResult result = pfn(pCreateInfo, pAllocator, pInstance);
         if (result != VK_SUCCESS)
         {
-            IExec->DebugPrintF("[vulkan.library] ICD %s: vkCreateInstance failed (%d)\n",
-                               icd->libraryPath, (int)result);
+            /* RawDoFmt-style: %s for strings, %ld for longs (%d is unsupported). */
+            IExec->DebugPrintF("[vulkan.library] ICD %s: vkCreateInstance failed (%ld)\n",
+                               icd->libraryPath, (long)result);
             continue;
         }
 
